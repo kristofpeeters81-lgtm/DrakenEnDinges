@@ -6,6 +6,7 @@ import { OPDRACHTEN, pickOther } from '../data/pech-opdrachten';
 import { addFry, findHero, giveItem, MAX_FRIES, MAX_ITEMS, ownedItems, presentHeroes } from '../game/state';
 import { ask, toast } from '../ui/dialog';
 import { actionOf, escapeHtml, FRY_BAG_SVG, $ } from '../ui/dom';
+import { readBar, readerOf } from '../ui/readaloud';
 
 let lastTask = '';
 
@@ -71,6 +72,7 @@ export async function openFind(app: App, title = 'Jullie vinden iets!'): Promise
     <h2>${escapeHtml(title)}</h2>
     <p class="find-name story-text">${escapeHtml(content.naam)}</p>
     <p class="find-text story-text">${escapeHtml(content.beschrijving)}</p>
+    ${readBar(`${content.naam}. ${content.beschrijving}`, readerOf(game))}
     <p class="explain">1× per sessie: een worp telt als “goed in”.</p>
   </div>`;
   overlay.hidden = false;

@@ -16,6 +16,7 @@ import { rollDice } from '../game/dice';
 import { CHAPTERS, hasAlly, isFinale, leadTotal, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, MOMENT_TARGET, neededSuccesses, rollerCount, SCENES, type Season } from '../game/season';
 import { findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, setGoalMet, takeReward, type Game } from '../game/state';
 import { openFind } from './tasks';
+import { readBar, readerOf } from '../ui/readaloud';
 import { ask, confirmDialog } from '../ui/dialog';
 import { DICE_ICON, dieSvg, escapeHtml } from '../ui/dom';
 import { openDice } from './dice';
@@ -121,6 +122,7 @@ function chapterCard(game: Game, season: Season): string {
     momentHtml = `<div class="moment done ${result === 'mislukt' ? 'nok' : 'ok'}">
       <p class="moment-result">${label}</p>
       <p class="moment-text story-text">${escapeHtml(text)}</p>
+      ${readBar(text, readerOf(game))}
       ${result !== 'mislukt' && !season.rewardTaken ? '<button class="btn big reward-btn" data-action="reward">Beloning: jullie vinden iets!</button>' : ''}
       <p class="hint">Dit hoofdstuk is klaar. Stop de sessie en bewaar. Volgende keer: <b>${next}</b>.</p>
     </div>`;
@@ -140,6 +142,7 @@ function chapterCard(game: Game, season: Season): string {
     momentHtml = `<div class="scene moment-scene">
       <p class="scene-label">${SCENE_NAMES[MOMENT_SCENE]}</p>
       <p class="moment-text story-text">${escapeHtml(v.moment)}</p>
+      ${readBar(v.moment, readerOf(game))}
       <button class="btn big primary" data-action="moment-start">Start het beslissende moment</button>
       <p class="hint">Elke held rolt één keer. Nodig: ${need} van ${rollers} successen${leadTotal(season) > 0 ? ' — jullie voorsprong telt mee' : ''}.</p>
     </div>`;
@@ -150,6 +153,7 @@ function chapterCard(game: Game, season: Season): string {
     momentHtml = `<div class="scene">
       <p class="scene-label">${SCENE_NAMES[season.scene]} — lees voor!</p>
       <p class="scene-text story-text">${escapeHtml(sc.tekst)}</p>
+      ${readBar(season.scene === 0 ? [v.recap ? `Vorige keer in Kakofonië: ${v.recap}` : '', v.intro ?? '', sc.tekst].filter(Boolean).join(' ') : sc.tekst, readerOf(game))}
       <div class="scene-actions">
         <button class="btn small" data-action="ideas-toggle">${open ? 'Ideeën verbergen' : 'Ideeën als jullie vastzitten'}</button>
         <button class="btn big primary" data-action="scene-next">${season.scene + 1 >= MOMENT_SCENE ? 'Verder: het beslissende moment ▶' : 'Verder in het verhaal ▶'}</button>
@@ -188,6 +192,7 @@ function finaleCard(game: Game, season: Season): string {
     body = `<div class="moment done ok won">
       <p class="moment-result">GEWONNEN!</p>
       <p class="moment-text story-text">${escapeHtml(after?.text ?? finaleWonText(season))}</p>
+      ${readBar(after?.text ?? finaleWonText(season), readerOf(game))}
       <p class="hint">Het seizoen is uit. Stop de sessie en bewaar. Volgende keer kan er een nieuw seizoen beginnen.</p>
     </div>`;
   } else if (r) {
@@ -198,7 +203,7 @@ function finaleCard(game: Game, season: Season): string {
       ${rollersList(game, r)}
     </div>`;
   } else {
-    body = `${after && after.kind === 'finale-round' ? `<p class="moment-text story-text">${escapeHtml(after.text)}</p>` : ''}
+    body = `${after && after.kind === 'finale-round' ? `<p class="moment-text story-text">${escapeHtml(after.text)}</p>${readBar(after.text, readerOf(game))}` : ''}
       <div class="moment-start">
         <button class="btn big primary" data-action="finale-round">${finaleRounds === 0 && !after ? 'Start de finale!' : 'Volgende ronde!'}</button>
       </div>`;
@@ -208,6 +213,7 @@ function finaleCard(game: Game, season: Season): string {
     ${hearts(season)}
     ${f.recap ? `<p class="recap"><b>Vorige keer in Kakofonië:</b> <span class="story-text">${escapeHtml(f.recap)}</span></p>` : ''}
     <p class="story-text">${escapeHtml(f.tekst)}</p>
+    ${finaleRounds === 0 && !after ? readBar([f.recap ? `Vorige keer in Kakofonië: ${f.recap}` : '', f.tekst, f.zwakte ? `Jullie kennen zijn zwakte: ${f.zwakte}` : ''].filter(Boolean).join(' '), readerOf(game)) : ''}
     <p class="goal">${
       f.zwakte
         ? `<b>Jullie kennen zijn zwakte:</b> <span class="story-text">${escapeHtml(f.zwakte)}</span>`

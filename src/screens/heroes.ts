@@ -21,6 +21,8 @@ import {
 import { actionOf, escapeHtml } from '../ui/dom';
 import { ask, confirmDialog, toast } from '../ui/dialog';
 import { resetSeasonUi } from './season';
+import { readMode, setReadMode, type ReadMode } from '../ui/readaloud';
+import { speechAvailable } from '../platform/speech';
 
 /** Vraagt wat er vandaag gespeeld wordt: verder in het seizoen (of een nieuw) of een los avontuur. */
 async function chooseSessionKind(game: Game): Promise<SessionMode | null> {
@@ -74,6 +76,12 @@ export function renderHeroes(app: App): void {
             : `<button class="card add-card" data-action="add"><span class="plus">+</span>Nieuwe held<small>${game.heroes.length}/${MAX_HEROES}</small></button>`
         }
       </div>
+      <div class="settings">
+        <span class="settings-label">Voorlezen:</span>
+        <button class="seg ${readMode() === 'beurt' ? 'active' : ''}" data-action="readmode" data-id="beurt">Om de beurt</button>
+        <button class="seg ${readMode() === 'stem' ? 'active' : ''}" data-action="readmode" data-id="stem" ${speechAvailable() ? '' : 'disabled'}>App-stem</button>
+        ${speechAvailable() ? '' : '<small>(geen stem op dit toestel)</small>'}
+      </div>
       <footer class="screen-footer">
         <button class="btn big primary" data-action="start" ${present === 0 ? 'disabled' : ''}>${startLabel} ▶</button>
         <p class="hint">${present === 0 ? 'Zet minstens 1 held op “speelt mee”.' : `${present} ${present === 1 ? 'held speelt' : 'helden spelen'} mee.`}</p>
@@ -117,6 +125,10 @@ export function renderHeroes(app: App): void {
           app.changed();
           break;
         }
+        case 'readmode':
+          setReadMode(hit.id as ReadMode);
+          app.changed();
+          break;
         case 'start':
           if (!game.sessionActive) {
             const kind = await chooseSessionKind(game);

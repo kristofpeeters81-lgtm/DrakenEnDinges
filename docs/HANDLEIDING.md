@@ -63,6 +63,14 @@ Bij **Start sessie** kies je wat jullie vandaag spelen:
   kennen jullie ook zijn zwakte). Elke ronde rolt iedereen één keer; elk succes kost hem een leven.
   Rondes tot hij verslagen is: de finale is **altijd** te winnen.
 
+## Voorlezen
+Kies op het heldenscherm bij **Voorlezen**:
+- **Om de beurt**: bij elke verhaaltekst staat wie voorleest (de speler van de held die aan de beurt is).
+  Soms met een opdracht erbij, bv. *met de stem van een verkouden trol*.
+- **App-stem**: bij elke verhaaltekst staat **🔊 Lees voor**; de tablet leest voor (Vlaamse stem als die op de tablet staat,
+  anders Nederlandse). Geen stem op het toestel? Dan is deze keuze grijs.
+De keuze wordt per toestel onthouden.
+
 ## Beginscène
 - Bij **Start sessie** kiest de app een **beginscène**: lees ze hardop voor, daarna nemen jullie het over.
   Er zijn er 30; niemand kent ze op voorhand. Een beginscène komt pas terug als ze alle 30 geweest zijn.

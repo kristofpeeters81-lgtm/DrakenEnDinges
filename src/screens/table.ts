@@ -22,6 +22,7 @@ import { handleSeasonAction, seasonBlock } from './season';
 import { openEidastinkt, openOracle, openPrikkel, oracleHistory } from './oracle';
 import { getItem, getOpening, openingCount } from '../content';
 import { openFind, openTask } from './tasks';
+import { readBar, readerOf } from '../ui/readaloud';
 
 function fries(hero: Hero): string {
   let icons = '';
@@ -31,7 +32,7 @@ function fries(hero: Hero): string {
 
 let openingCollapsed = false;
 
-function openingCard(index: number | null): string {
+function openingCard(index: number | null, reader: string | null): string {
   const opening = getOpening(index);
   if (!opening) return '';
   if (openingCollapsed) {
@@ -42,6 +43,7 @@ function openingCard(index: number | null): string {
     <p class="opening-label">Beginscène — lees voor!</p>
     <h3 class="opening-title">${escapeHtml(opening.titel)}</h3>
     <p class="opening-text">${escapeHtml(opening.tekst)}</p>
+    ${readBar(opening.tekst, reader)}
     <div class="opening-actions">
       <button class="btn small" data-action="opening-toggle">Verbergen</button>
       <button class="btn small ghost" data-action="opening-other">Andere beginscène</button>
@@ -134,7 +136,7 @@ export function renderTable(app: App): void {
             </div>`
           : ''
       }
-      ${game.sessionMode === 'seizoen' ? seasonBlock(app) : openingCard(game.opening)}
+      ${game.sessionMode === 'seizoen' ? seasonBlock(app) : openingCard(game.opening, readerOf(game))}
       <section class="story-tools">
         <div class="story-pot">${POT_SVG}</div>
         <div class="story-main">

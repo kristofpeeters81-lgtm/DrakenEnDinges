@@ -150,6 +150,7 @@ Alles wordt opgeslagen op de tablet (met exportknop als back-up).
 | 5b ✅ | Gebouwd 2026-11-14: opdrachten (24, "Verdien een frietje"), zotte pech via pech-dobbelsteen (12, tot de volgende scène, ook voor de helper), rugzak met 30 verborgen voorwerpen (sub-agent), "Iets gevonden!" + beloning na een gelukt moment, voorwerp 1×/sessie = "goed in". Spelbestand → versie 6 | Vondst, opdracht, voorwerp gebruiken, pech en beloning in de browsertest |
 | 5 | **Sessieverloop**: scènes, opdrachten, rugzak/voorwerpen, pech-toestanden | Een volledige testsessie doorlopen |
 | 5b | **Groei**: level-up-kaarten, sterren + winkeltje, titels, maatjes, voorwerp-upgrades, gastpersonages, schaling van de slechterik | Na een testsessie level-up kiezen, en een gast start op groepsniveau |
+| 6 ✅ | Gebouwd 2026-11-14: keuze per toestel (localStorage). Om de beurt = voorlezer (speler van wie aan de beurt is) + 1 op 3 keer een stemmetje-opdracht; app-stem = knop 🔊 met nl-BE/nl-NL-stem via speechSynthesis. Bij beginscène, scènes (scène 1 mét "Vorige keer"), moment, uitslag, finale, Eidastinkt en vondsten | Beide modi in de browsertest |
 | 6 | **Voorleesmodus** (om beurt / app-stem) | Wisselen werkt, de stem leest Nederlands |
 | 7 | **Echte inhoud** (spoilervrij, via sub-agent, in porties) | Seizoen 1 speelbaar |
 | 8 | **Afwerking**: tv-weergave, offline, GitHub Pages, testprotocol | Eerste echte speelavond |

@@ -381,6 +381,7 @@ try {
   check((await text('.meter b')) === '0/6', 'Slechterik-meter start op 0');
   await shot('seizoen-hoofdstuk-1');
   check((await text('.scene-label')).includes('Het begin'), 'hoofdstuk start met de beginscène');
+  check((await page.$('.scene .reader')) !== null, 'om de beurt: bij de scène staat wie voorleest');
   check((await page.$('[data-action="moment-start"]')) === null, 'beslissend moment komt pas na de scènes');
   await click('[data-action="ideas-toggle"]');
   await page.waitForSelector('.ideas-list');
@@ -450,7 +451,16 @@ try {
   // Hoofdstuk 2: geen voorsprong, alles mislukt → meter +2
   await stopSessionLater();
   check((await text('[data-action="start"]')).includes('Start sessie'), 'nieuwe sessie na een afgerond hoofdstuk');
+  await click('[data-action="readmode"][data-id="stem"]');
+  await page.waitForSelector('[data-action="readmode"][data-id="stem"].active');
   await startSessionAs('seizoen');
+  await page.evaluate(() => {
+    window.__spoken = [];
+    window.speechSynthesis.speak = (u) => window.__spoken.push(u.text.length);
+  });
+  await click('.scene .read-btn');
+  const spoken = await page.evaluate(() => window.__spoken);
+  check(spoken.length === 1 && spoken[0] > 100, 'app-stem: "Lees voor" leest de scène voor (met "Vorige keer")');
   check((await text('.chapter-label')).includes('Hoofdstuk 2 van 3'), 'volgende sessie = hoofdstuk 2');
   check((await page.$('.recap')) !== null, 'hoofdstuk 2 begint met "Vorige keer in Kakofonië"');
   await playMoment('no', 1);

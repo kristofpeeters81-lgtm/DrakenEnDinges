@@ -12,6 +12,8 @@ import { renderHeroes } from './screens/heroes';
 import { renderHome } from './screens/home';
 import { renderTable } from './screens/table';
 import { requestPersistence, writeAutosave } from './storage/autosave';
+import { warmUpVoices } from './platform/speech';
+import { installReadAloud } from './ui/readaloud';
 import { $ } from './ui/dom';
 import { ask, toast } from './ui/dialog';
 
@@ -100,6 +102,8 @@ const app: App = {
 };
 
 requestPersistence();
+installReadAloud();
+warmUpVoices();
 render();
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

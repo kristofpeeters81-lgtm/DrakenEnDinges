@@ -1215,6 +1215,47 @@ small {
   margin-top: 12px;
 }
 
+/* ---------- voorlezen ---------- */
+
+.read-bar {
+  margin: 4px 0 8px;
+}
+
+.reader {
+  display: inline-block;
+  background: #f5f3ff;
+  border: 2px solid #c4b5fd;
+  border-radius: 12px;
+  padding: 3px 12px;
+  font-size: 18px;
+}
+
+.voice-task {
+  color: #6d28d9;
+}
+
+.read-btn {
+  background: #f5f3ff;
+}
+
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.settings-label {
+  font-family: var(--title);
+  margin-right: 8px;
+}
+
+.settings .seg {
+  min-height: 48px;
+  min-width: 0;
+}
+
 /* ---------- dobbelvenster ---------- */
 
 #overlay {

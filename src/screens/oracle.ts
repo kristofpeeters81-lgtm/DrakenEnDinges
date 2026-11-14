@@ -6,6 +6,8 @@ import { ANSWER_TEXTS, quipFor, zottePrikkel } from '../data/oracle-texts';
 import { askOracle, isYes, oracleDiceCount, wantsPrompt, type Likelihood, type OracleOutcome } from '../game/oracle';
 import { rollDice } from '../game/dice';
 import { actionOf, dieSvg, escapeHtml, POT_SVG, $ } from '../ui/dom';
+import { readBar, readerOf } from '../ui/readaloud';
+import { requireGame } from '../app';
 
 interface HistoryItem {
   question: string;
@@ -224,10 +226,12 @@ export function openPrikkel(app: App): void {
 export function openEidastinkt(app: App): void {
   const overlay = $('#overlay');
   const render = (): void => {
+    const event = drawEidastinkt();
     overlay.innerHTML = shell(
       `
       <p class="eida-shout">Eidastinkt!</p>
-      <p class="eida-event">${escapeHtml(drawEidastinkt())}</p>
+      <p class="eida-event">${escapeHtml(event)}</p>
+      ${readBar(event, readerOf(requireGame(app)))}
       <div class="dice-actions">
         <button class="btn big primary" data-action="close">Verder spelen</button>
       </div>`,
