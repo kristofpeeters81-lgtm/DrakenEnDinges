@@ -41,7 +41,19 @@ export const FIGURES_PER_SEASON = CHAPTERS;
 
 export type ChapterResult = 'perfect' | 'gehaald' | 'mislukt';
 
-export interface Season {
+/** Wat een gespeeld hoofdstuk bijhoudt — een seizoenshoofdstuk én een los avontuur (zelfde regels). */
+export interface SceneState {
+  /** Huidige scène (0 = begin, 1 = wending, 2 = beslissend moment). */
+  scene: number;
+  /** Uitkomst van de scènes met acties (true = gelukt), in volgorde. Bepaalt de vertakking. */
+  keys: boolean[];
+  /** Verhaallogboek: elke gekozen actie met wie en hoe het afliep. */
+  log: LogEntry[];
+  /** Het beslissende moment is al gespeeld. */
+  momentDone: boolean;
+}
+
+export interface Season extends SceneState {
   villain: number;
   places: number[];
   figures: number[];
@@ -128,39 +140,44 @@ export function neededSuccesses(rollers: number, meter: number): number {
 }
 
 /** Heeft de huidige scène al een uitkomst (voortgang vol of beurten op)? */
-export function keyDone(season: Season): boolean {
-  return season.keys.length > season.scene;
+export function keyDone(state: SceneState): boolean {
+  return state.keys.length > state.scene;
 }
 
-function sceneLog(season: Season): LogEntry[] {
-  return season.log.filter((e) => e.scene === season.scene);
+function sceneLog(state: SceneState): LogEntry[] {
+  return state.log.filter((e) => e.scene === state.scene);
 }
 
-export function sceneProgress(season: Season): number {
-  return sceneLog(season).filter((e) => e.success).length;
+export function sceneProgress(state: SceneState): number {
+  return sceneLog(state).filter((e) => e.success).length;
 }
 
-export function turnsLeft(season: Season): number {
-  return Math.max(0, SCENE_TURNS - sceneLog(season).length);
+export function turnsLeft(state: SceneState): number {
+  return Math.max(0, SCENE_TURNS - sceneLog(state).length);
 }
 
 /** Is deze actie in de huidige scène al gelukt? (dan kan ze niet nog eens) */
-export function actionSucceeded(season: Season, action: number): boolean {
-  return action !== OWN_IDEA && sceneLog(season).some((e) => e.action === action && e.success);
+export function actionSucceeded(state: SceneState, action: number): boolean {
+  return action !== OWN_IDEA && sceneLog(state).some((e) => e.action === action && e.success);
 }
 
 /** Is deze actie in de huidige scène al eens mislukt? (dan mag ze opnieuw) */
-export function actionFailed(season: Season, action: number): boolean {
-  return action !== OWN_IDEA && sceneLog(season).some((e) => e.action === action && !e.success);
+export function actionFailed(state: SceneState, action: number): boolean {
+  return action !== OWN_IDEA && sceneLog(state).some((e) => e.action === action && !e.success);
+}
+
+/** Kan er nu een actie gespeeld worden? (niet in de finale: die heeft geen scènes) */
+export function canActIn(state: SceneState): boolean {
+  return !state.momentDone && state.scene < MOMENT_SCENE && !keyDone(state);
 }
 
 export function canAct(season: Season): boolean {
-  return !isFinale(season) && !season.momentDone && season.scene < MOMENT_SCENE && !keyDone(season);
+  return !isFinale(season) && canActIn(season);
 }
 
 /** Een actie is afgerond. Geeft de uitkomst van de scène terug als die nu vaststaat (true/false), anders null. */
-export function recordAction(season: Season, entry: Omit<LogEntry, 'scene'>): boolean | null {
-  if (!canAct(season)) throw new Error('Er kan nu geen actie gespeeld worden');
+export function recordAction(season: SceneState, entry: Omit<LogEntry, 'scene'>): boolean | null {
+  if (!canActIn(season)) throw new Error('Er kan nu geen actie gespeeld worden');
   if (actionSucceeded(season, entry.action)) throw new Error('Deze actie is al gelukt');
   season.log.push({ ...entry, text: entry.text.slice(0, 120), scene: season.scene });
   if (sceneProgress(season) >= SCENE_GOAL) season.keys.push(true);
@@ -169,24 +186,28 @@ export function recordAction(season: Season, entry: Omit<LogEntry, 'scene'>): bo
 }
 
 /** Verder in het verhaal: naar de volgende scène, pas als het sleutelmoment van deze scène gespeeld is. */
-export function advanceScene(season: Season): void {
-  if (isFinale(season) || season.momentDone || !keyDone(season)) return;
-  season.scene = Math.min(MOMENT_SCENE, season.scene + 1);
+export function advanceScene(state: SceneState): void {
+  if (state.momentDone || !keyDone(state)) return;
+  state.scene = Math.min(MOMENT_SCENE, state.scene + 1);
 }
 
 /** Voorsprong: 1 ster per gelukt sleutelmoment, +1 als ze allemaal lukten. */
-export function leadTotal(season: Season): number {
-  const won = season.keys.filter(Boolean).length;
-  return won + (season.keys.length === KEY_MOMENTS && won === KEY_MOMENTS ? 1 : 0);
+export function leadTotal(state: SceneState): number {
+  const won = state.keys.filter(Boolean).length;
+  return won + (state.keys.length === KEY_MOMENTS && won === KEY_MOMENTS ? 1 : 0);
+}
+
+/** Uitkomst van een beslissend moment: dobbelsteensuccessen + voorsprong tegen het aantal nodige successen. */
+export function momentResult(state: SceneState, diceSuccesses: number, rollers: number, meter: number): ChapterResult {
+  const successes = Math.min(rollers, diceSuccesses + leadTotal(state));
+  return successes >= rollers ? 'perfect' : successes >= neededSuccesses(rollers, meter) ? 'gehaald' : 'mislukt';
 }
 
 /** `diceSuccesses` = geslaagde worpen bij het moment zelf; de voorsprong telt er automatisch bij. */
 export function resolveMoment(season: Season, diceSuccesses: number, rollers: number): ChapterResult {
   if (isFinale(season) || season.momentDone) throw new Error('Geen beslissend moment meer in dit hoofdstuk');
   season.scene = MOMENT_SCENE;
-  const successes = Math.min(rollers, diceSuccesses + leadTotal(season));
-  const result: ChapterResult =
-    successes >= rollers ? 'perfect' : successes >= neededSuccesses(rollers, season.meter) ? 'gehaald' : 'mislukt';
+  const result = momentResult(season, diceSuccesses, rollers, season.meter);
   if (result === 'perfect') season.meter = Math.max(0, season.meter - 1);
   if (result === 'mislukt') season.meter = Math.min(METER_MAX, season.meter + 2);
   if (result !== 'mislukt') season.clues = Math.min(CHAPTERS, season.clues + 1);

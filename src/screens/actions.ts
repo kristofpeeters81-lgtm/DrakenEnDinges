@@ -2,11 +2,11 @@
 // De uitkomst gaat in het verhaallogboek van het hoofdstuk en vult de voortgang van de scène.
 
 import { requireGame, type App } from '../app';
-import { chapterView } from '../content/season-view';
+import { currentPlay } from '../content/play-view';
 import { ANSWER_TEXTS, quipFor } from '../data/oracle-texts';
 import { rollDice } from '../game/dice';
 import { askOracle, isYes, oracleDiceCount, type Likelihood, type OracleOutcome } from '../game/oracle';
-import { actionFailed, actionSucceeded, canAct, OWN_IDEA } from '../game/season';
+import { actionFailed, actionSucceeded, canActIn, OWN_IDEA } from '../game/season';
 import { currentHero, nextTurn, recordSceneAction, type Game, type Hero } from '../game/state';
 import { toast } from '../ui/dialog';
 import { actionOf, DICE_ICON, dieSvg, escapeHtml, POT_SVG, $ } from '../ui/dom';
@@ -45,10 +45,11 @@ function rollFor(app: App, hero: Hero, title: string, action: number, text: stri
 
 export function openActions(app: App): void {
   const game = requireGame(app);
-  const season = game.season;
+  const play = currentPlay(game);
   const hero = currentHero(game);
-  if (!season || !hero || !canAct(season)) return;
-  const scene = chapterView(season).scenes[season.scene];
+  if (!play || !hero || !canActIn(play.state)) return;
+  const season = play.state;
+  const scene = play.scenes[season.scene];
   const overlay = $('#overlay');
 
   overlay.innerHTML = `<div class="dice-panel actions-panel" role="dialog" aria-modal="true">

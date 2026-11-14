@@ -4,6 +4,10 @@ import {
   addFry,
   addHero,
   canRoll,
+  activePlay,
+  beginLooseSession,
+  chooseAdventure,
+  recordSceneAction,
   giveItem,
   MAX_ITEMS,
   nextScene,
@@ -321,6 +325,47 @@ describe('rugzak, pech en beloning', () => {
     beginSeasonSession(g, counts);
     recordMoment(g, 0);
     expect(takeReward(g)).toBe(false);
+  });
+});
+
+describe('losse avonturen in het spel', () => {
+  function loose() {
+    const g = newGame();
+    addHero(g, draft('A'));
+    addHero(g, draft('B'));
+    startSession(g);
+    beginLooseSession(g, 4);
+    return g;
+  }
+
+  it('een losse sessie krijgt een avontuur, en acties gaan naar dat avontuur', () => {
+    const g = loose();
+    expect(g.adventure).not.toBeNull();
+    expect(activePlay(g)).toBe(g.adventure);
+    recordSceneAction(g, 'A', 0, '', true);
+    expect(g.adventure?.log.length).toBe(1);
+  });
+
+  it('beslissend moment en beloning werken ook in een los avontuur (zonder meter)', () => {
+    const g = loose();
+    if (g.adventure) g.adventure.keys = [true, true];
+    expect(recordMoment(g, 0)).toBe('perfect');
+    expect(takeReward(g)).toBe(true);
+    expect(takeReward(g)).toBe(false);
+    expect(g.season).toBeNull();
+  });
+
+  it('kiest pas opnieuw hetzelfde avontuur als alles geweest is, en "ander avontuur" geeft een ander', () => {
+    const g = newGame();
+    const seen: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      chooseAdventure(g, 4);
+      seen.push(g.adventure?.index ?? -1);
+    }
+    expect([...seen].sort()).toEqual([0, 1, 2, 3]);
+    const before = g.adventure?.index;
+    chooseAdventure(g, 4);
+    expect(g.adventure?.index).not.toBe(before);
   });
 });
 

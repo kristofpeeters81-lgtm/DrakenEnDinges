@@ -15,45 +15,24 @@ import {
   undoPower,
   usePower,
   setPech,
-  chooseOpening,
+  chooseAdventure,
   type Hero,
 } from '../game/state';
 import { actionOf, BOLT_ICON, DICE_ICON, escapeHtml, FRY_BAG_SVG, frySvg, POT_SVG } from '../ui/dom';
 import { ask, confirmDialog, toast } from '../ui/dialog';
 import { openDice } from './dice';
-import { handleSeasonAction, seasonBlock } from './season';
+import { adventureBlock, handleSeasonAction, seasonBlock } from './season';
 import { openEidastinkt, openOracle, openPrikkel, oracleHistory } from './oracle';
-import { getItem, getOpening, openingCount } from '../content';
+import { getItem } from '../content';
+import { adventureCount } from '../content/adventure-view';
 import { openFind, openTask } from './tasks';
 import { ITEM_LEVEL_NAMES, itemUses, titleName } from '../game/growth';
 import { BUDDIES, BUDDY_STAGES } from '../data/growth-data';
-import { readBar, readerOf } from '../ui/readaloud';
 
 function fries(hero: Hero): string {
   let icons = '';
   for (let i = 0; i < Math.max(hero.fries, 3); i++) icons += frySvg(i < hero.fries);
   return icons;
-}
-
-let openingCollapsed = false;
-
-function openingCard(index: number | null, reader: string | null): string {
-  const opening = getOpening(index);
-  if (!opening) return '';
-  if (openingCollapsed) {
-    return `<div class="opening collapsed"><span class="opening-label">Beginscène:</span> <b class="opening-title">${escapeHtml(opening.titel)}</b>
-      <button class="btn small" data-action="opening-toggle">Toon</button></div>`;
-  }
-  return `<article class="opening">
-    <p class="opening-label">Beginscène — lees voor!</p>
-    <h3 class="opening-title">${escapeHtml(opening.titel)}</h3>
-    <p class="opening-text">${escapeHtml(opening.tekst)}</p>
-    ${readBar(opening.tekst, reader)}
-    <div class="opening-actions">
-      <button class="btn small" data-action="opening-toggle">Verbergen</button>
-      <button class="btn small ghost" data-action="opening-other">Andere beginscène</button>
-    </div>
-  </article>`;
 }
 
 function oracleLog(): string {
@@ -149,7 +128,7 @@ export function renderTable(app: App): void {
             </div>`
           : ''
       }
-      ${game.sessionMode === 'seizoen' ? seasonBlock(app) : openingCard(game.opening, readerOf(game))}
+      ${game.sessionMode === 'seizoen' ? seasonBlock(app) : adventureBlock(app)}
       <section class="story-tools">
         <div class="story-pot">${POT_SVG}</div>
         <div class="story-main">
@@ -210,14 +189,9 @@ export function renderTable(app: App): void {
         case 'oracle':
           openOracle(app);
           break;
-        case 'opening-toggle':
-          openingCollapsed = !openingCollapsed;
-          app.changed();
-          break;
-        case 'opening-other':
-          if (!(await confirmDialog('Een andere beginscène kiezen? Deze komt dan pas veel later terug.', 'Ja, een andere', 'Nee'))) return;
-          chooseOpening(game, openingCount());
-          openingCollapsed = false;
+        case 'adventure-other':
+          if (game.adventure && !(await confirmDialog('Een ander avontuur kiezen? Dit komt dan pas veel later terug.', 'Ja, een ander', 'Nee'))) return;
+          chooseAdventure(game, adventureCount());
           app.changed();
           break;
         case 'prikkel':

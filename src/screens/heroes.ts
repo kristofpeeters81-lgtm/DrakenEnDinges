@@ -1,13 +1,12 @@
 // Heldenscherm: wie speelt er mee vandaag, helden aanmaken/aanpassen/verwijderen, sessie starten.
 
 import { requireGame, saveButton, topbar, type App } from '../app';
-import { openingCount } from '../content';
+import { adventureCount } from '../content/adventure-view';
 import { isTestContent, seasonCounts } from '../content/season-view';
 import { CHAPTERS } from '../game/season';
 import {
   beginLooseSession,
   beginSeasonSession,
-  chooseOpening,
   hasUnsavedChanges,
   MAX_HEROES,
   presentHeroes,
@@ -38,7 +37,7 @@ async function chooseSessionKind(game: Game): Promise<SessionMode | null> {
   }
   const choice = await ask('Wat spelen jullie vandaag?', [
     { label: 'Annuleer', value: 'cancel' },
-    { label: 'Los avontuur (beginscène)', value: 'los' },
+    { label: 'Los avontuur (één avond)', value: 'los' },
     { label: isTestContent() ? `${label} (testverhaal)` : label, value: 'seizoen', primary: true },
   ]);
   return choice === 'seizoen' || choice === 'los' ? choice : null;
@@ -169,8 +168,7 @@ export function renderHeroes(app: App): void {
             if (kind === 'seizoen') {
               beginSeasonSession(game, seasonCounts());
             } else {
-              beginLooseSession(game);
-              chooseOpening(game, openingCount());
+              beginLooseSession(game, adventureCount());
             }
           }
           app.changed();

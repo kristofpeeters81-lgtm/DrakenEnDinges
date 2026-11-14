@@ -55,7 +55,7 @@
 Bij **Start sessie** kies je wat jullie vandaag spelen:
 - **Seizoen**: één slechterik met een plan in **3 hoofdstukken + finale** (4 speelavonden). Zolang het echte verhaal
   er nog niet is, staat er **(testverhaal)** bij: speel dan met je dochter liever een los avontuur.
-- **Los avontuur**: één avond met een beginscène (zie hieronder). Handig met een gast of voor een korte avond.
+- **Los avontuur**: één avond als mini-hoofdstuk (zie hieronder). Handig met een gast of voor een losse avond.
 
 ### Hoe een seizoen werkt
 - Bovenaan staat het seizoen: de **Slechterik-meter** (0–6), jullie **voorsprong** (★) en de gevonden **aanwijzingen**.
@@ -93,11 +93,12 @@ Kies op het heldenscherm bij **Voorlezen**:
   anders Nederlandse). Geen stem op het toestel? Dan is deze keuze grijs.
 De keuze wordt per toestel onthouden.
 
-## Beginscène
-- Bij **Start sessie** kiest de app een **beginscène**: lees ze hardop voor, daarna nemen jullie het over.
-  Er zijn er 30; niemand kent ze op voorhand. Een beginscène komt pas terug als ze alle 30 geweest zijn.
-- **Andere beginscène**: als jullie er eentje niet leuk vinden. **Verbergen** klapt ze in (en **Toon** weer open).
-- Tussenoplossing: vanaf het echte seizoensverhaal (blok 4–5) neemt het verhaal deze plaats over.
+## Los avontuur
+- **Los avontuur** = één avond (± 45 min), los van een seizoen. Het werkt **precies zoals een hoofdstuk van een seizoen**:
+  begin → wending (versie gelukt/mislukt) → beslissend moment, met per scène een doel, acties, voortgang en logboek.
+  Alleen zonder Slechterik-meter, aanwijzingen en finale.
+- Er zijn 15 avonturen; niemand kent ze op voorhand. Een avontuur komt pas terug als ze alle 15 geweest zijn.
+- **Ander avontuur**: zolang jullie nog niets gedaan hebben in het avontuur, kan je een ander kiezen.
 
 ## Wat gebeurt er nu? (de Pruttelpot)
 - **Vraag de Pruttelpot**: het orakel van Kakofonië. Stel een ja/nee-vraag (typen mag, hardop zeggen ook),

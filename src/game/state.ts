@@ -3,8 +3,9 @@
 
 import { isListedPower } from '../data/ideas';
 import { emptyStats, type GuestTemplate, type HeroStats } from '../data/growth-data';
+import { newAdventure, resolveAdventureMoment, type Adventure } from './adventure';
 import { applyCard, checkTitles, grantLevelUp, groupLevel, itemUses, titleName, type Buddy, type CardChoice, type CardKind } from './growth';
-import { advanceChapter, advanceScene, recordAction, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
+import { advanceChapter, advanceScene, recordAction, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type SceneState, type Season } from './season';
 
 export const MAX_HEROES = 6;
 export const START_FRIES = 3;
@@ -78,6 +79,10 @@ export interface Game {
   usedVillains: number[];
   /** Wat er deze sessie gespeeld wordt: een hoofdstuk van het seizoen of een los avontuur. */
   sessionMode: SessionMode | null;
+  /** Het losse avontuur van deze (of de laatste) losse sessie. */
+  adventure: Adventure | null;
+  /** Losse avonturen die al gespeeld werden (komen pas terug als ze allemaal geweest zijn). */
+  usedAdventures: number[];
 }
 
 export type SessionMode = 'seizoen' | 'los';
@@ -87,7 +92,7 @@ export function newId(rng: () => number = Math.random): string {
 }
 
 export function newGame(now: number = Date.now()): Game {
-  return { id: newId(), createdAt: now, updatedAt: now, session: 0, sessionActive: false, turn: 0, heroes: [], lastFileSave: null, opening: null, usedOpenings: [], season: null, usedVillains: [], sessionMode: null };
+  return { id: newId(), createdAt: now, updatedAt: now, session: 0, sessionActive: false, turn: 0, heroes: [], lastFileSave: null, opening: null, usedOpenings: [], season: null, usedVillains: [], sessionMode: null, adventure: null, usedAdventures: [] };
 }
 
 export function emptyDraft(): HeroDraft {
@@ -271,9 +276,45 @@ export function beginSeasonSession(game: Game, counts: ContentCounts, rng: () =>
   touch(game);
 }
 
-export function beginLooseSession(game: Game): void {
+/** Na startSession: deze sessie is een los avontuur. Kiest er eentje dat nog niet gespeeld is (uit `count`). */
+export function beginLooseSession(game: Game, count: number, rng: () => number = Math.random): void {
   game.sessionMode = 'los';
+  chooseAdventure(game, count, rng);
   touch(game);
+}
+
+/** Kiest een (ander) los avontuur dat nog niet geweest is; zijn ze allemaal geweest, dan opnieuw beginnen. */
+export function chooseAdventure(game: Game, count: number, rng: () => number = Math.random): void {
+  if (count <= 0) {
+    game.adventure = null;
+    return;
+  }
+  const current = game.adventure?.index ?? -1;
+  let free: number[] = [];
+  for (let i = 0; i < count; i++) if (!game.usedAdventures.includes(i) && i !== current) free.push(i);
+  if (free.length === 0) {
+    game.usedAdventures = current >= 0 ? [current] : [];
+    free = [];
+    for (let i = 0; i < count; i++) if (i !== current) free.push(i);
+    if (free.length === 0) free = [0];
+  }
+  const pick = free[Math.floor(rng() * free.length)];
+  game.adventure = newAdventure(pick);
+  if (!game.usedAdventures.includes(pick)) game.usedAdventures.push(pick);
+  touch(game);
+}
+
+/** Wat er nu gespeeld wordt: het seizoenshoofdstuk of het losse avontuur (null in de finale of zonder sessie). */
+export function activePlay(game: Game): SceneState | null {
+  if (game.sessionMode === 'seizoen' && game.season && !isFinale(game.season)) return game.season;
+  if (game.sessionMode === 'los' && game.adventure) return game.adventure;
+  return null;
+}
+
+function requirePlay(game: Game): SceneState {
+  const play = activePlay(game);
+  if (!play) throw new Error('Er wordt nu geen hoofdstuk of avontuur gespeeld');
+  return play;
 }
 
 function requireSeason(game: Game): Season {
@@ -284,13 +325,13 @@ function requireSeason(game: Game): Season {
 /** Een geslaagde gewone worp in een seizoenssessie. Geeft true terug als dat een voorsprong-ster opleverde. */
 /** Een actie in de huidige scène is afgerond. Geeft de uitkomst van de scène terug als die nu vaststaat. */
 export function recordSceneAction(game: Game, hero: string, action: number, text: string, success: boolean): boolean | null {
-  const outcome = recordAction(requireSeason(game), { hero, action, text, success });
+  const outcome = recordAction(requirePlay(game), { hero, action, text, success });
   touch(game);
   return outcome;
 }
 
 export function nextScene(game: Game): void {
-  advanceScene(requireSeason(game));
+  advanceScene(requirePlay(game));
   // Zotte pech duurt tot de volgende scène.
   for (const hero of game.heroes) hero.pech = null;
   touch(game);
@@ -298,9 +339,15 @@ export function nextScene(game: Game): void {
 
 /** Beloning na een gelukt beslissend moment: één keer per hoofdstuk. */
 export function takeReward(game: Game): boolean {
-  const season = requireSeason(game);
-  if (!season.momentDone || season.rewardTaken || season.results[season.chapter] === 'mislukt') return false;
-  season.rewardTaken = true;
+  if (game.sessionMode === 'los') {
+    const adv = game.adventure;
+    if (!adv || !adv.momentDone || adv.rewardTaken || adv.result === 'mislukt') return false;
+    adv.rewardTaken = true;
+  } else {
+    const season = requireSeason(game);
+    if (!season.momentDone || season.rewardTaken || season.results[season.chapter] === 'mislukt') return false;
+    season.rewardTaken = true;
+  }
   touch(game);
   return true;
 }
@@ -308,7 +355,11 @@ export function takeReward(game: Game): boolean {
 
 /** Beslissend moment van het huidige hoofdstuk afronden. */
 export function recordMoment(game: Game, successes: number): ChapterResult {
-  const result = resolveMoment(requireSeason(game), successes, rollerCount(presentHeroes(game).length));
+  const rollers = rollerCount(presentHeroes(game).length);
+  const result =
+    game.sessionMode === 'los' && game.adventure
+      ? resolveAdventureMoment(game.adventure, successes, rollers)
+      : resolveMoment(requireSeason(game), successes, rollers);
   if (result === 'perfect') for (const h of presentHeroes(game)) bump(h, 'perfects');
   touch(game);
   return result;

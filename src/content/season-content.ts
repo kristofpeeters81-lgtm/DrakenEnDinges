@@ -68,11 +68,11 @@ export interface SeasonContent {
   figuren: NamedThing[];
 }
 
-function isRecord(v: unknown): v is Record<string, unknown> {
+export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-function isStr(v: unknown): v is string {
+export function isStr(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
@@ -88,7 +88,7 @@ function isAction(v: unknown): v is SceneAction {
   return isRecord(v) && ['label', 'past', 'gelukt', 'mislukt'].every((k) => isStr(v[k]));
 }
 
-function isScene(v: unknown): v is Scene {
+export function isScene(v: unknown): v is Scene {
   return (
     isRecord(v) &&
     ['tekst', 'doel', 'gelukt', 'mislukt'].every((k) => isStr(v[k])) &&
@@ -98,7 +98,7 @@ function isScene(v: unknown): v is Scene {
   );
 }
 
-function isBranch<T>(v: unknown, each: (x: unknown) => x is T): v is { gelukt: T; mislukt: T } {
+export function isBranch<T>(v: unknown, each: (x: unknown) => x is T): v is { gelukt: T; mislukt: T } {
   return isRecord(v) && each(v.gelukt) && each(v.mislukt);
 }
 

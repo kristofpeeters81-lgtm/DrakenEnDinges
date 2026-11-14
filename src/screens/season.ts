@@ -1,8 +1,10 @@
-// Seizoen op de speeltafel: Slechterik-meter, hoofdstuk (scènes met sleutelmomenten en vertakkingen), beslissend
-// moment en finalerondes. De voortgang van een groepsworp en de keuzes in een sleutelmoment zitten enkel in het
-// geheugen; pas de uitkomst wordt in het spel bewaard.
+// Speeltafel: een seizoenshoofdstuk of een los avontuur (zelfde kaart: scènes met doel, acties, voortgang en
+// verhaallogboek, vertakking en beslissend moment), plus voor seizoenen de Slechterik-meter en de finale.
+// De voortgang van een groepsworp zit enkel in het geheugen; pas de uitkomst wordt in het spel bewaard.
 
 import { requireGame, type App } from '../app';
+import { adventureOutcome, adventureView, isTestAdventures } from '../content/adventure-view';
+import type { NamedThing } from '../content/season-content';
 import {
   chapterView,
   clueTexts,
@@ -21,22 +23,24 @@ import {
   isFinale,
   KEY_MOMENTS,
   keyDone,
-  OWN_IDEA,
-  SCENE_GOAL,
-  SCENE_TURNS,
-  sceneProgress,
-  turnsLeft,
-  type LogEntry,
   leadTotal,
   METER_MAX,
   MOMENT_SCENE,
   MOMENT_TARGET,
   neededSuccesses,
+  OWN_IDEA,
   rollerCount,
+  SCENE_GOAL,
+  SCENE_TURNS,
+  sceneProgress,
   SCENES,
+  turnsLeft,
+  type ChapterResult,
+  type LogEntry,
+  type SceneState,
   type Season,
 } from '../game/season';
-import { currentHero, findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, takeReward, type Game } from '../game/state';
+import { activePlay, currentHero, findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, takeReward, type Game } from '../game/state';
 import { openActions } from './actions';
 import { openFind } from './tasks';
 import { readBar, readerOf } from '../ui/readaloud';
@@ -57,22 +61,44 @@ interface Aftermath {
   kind: 'moment' | 'finale-round' | 'won';
 }
 
+/** Alles wat de kaart nodig heeft om een seizoenshoofdstuk of een los avontuur te tonen. */
+interface PlayContext {
+  state: SceneState;
+  label: string;
+  titel: string;
+  recap: string | null;
+  intro: string | null;
+  scenes: SceneView[];
+  doel: string;
+  plaats: NamedThing | null;
+  figuur: NamedThing | null;
+  moment: string | null;
+  meter: number;
+  result: ChapterResult | null;
+  outcome: (success: boolean) => string;
+  resultLabel: (r: ChapterResult) => string;
+  doneHint: string;
+  rewardTaken: boolean;
+}
+
 const SCENE_NAMES = ['Het begin', 'De wending', 'Het beslissende moment'];
 
 let round: GroupRound | null = null;
 let aftermath: Aftermath | null = null;
 let finaleRounds = 0;
 
-function keyOf(game: Game, season: Season): string {
-  return `${game.id}|${season.villain}|${season.chapter}|${game.session}`;
+function keyOf(game: Game): string {
+  const what =
+    game.sessionMode === 'los' ? `los${game.adventure?.index ?? ''}` : `${game.season?.villain ?? ''}|${game.season?.chapter ?? ''}`;
+  return `${game.id}|${what}|${game.session}`;
 }
 
-function currentRound(game: Game, season: Season): GroupRound | null {
-  return round && round.key === keyOf(game, season) ? round : null;
+function currentRound(game: Game): GroupRound | null {
+  return round && round.key === keyOf(game) ? round : null;
 }
 
-function currentAftermath(game: Game, season: Season): Aftermath | null {
-  return aftermath && aftermath.key === keyOf(game, season) ? aftermath : null;
+function currentAftermath(game: Game): Aftermath | null {
+  return aftermath && aftermath.key === keyOf(game) ? aftermath : null;
 }
 
 function meter(season: Season): string {
@@ -88,12 +114,12 @@ function stars(n: number, max: number): string {
   return out;
 }
 
-/** Voorsprong: één ster per sleutelmoment (gelukt = aan), plus een bonusster als ze allemaal lukten. */
-function lead(season: Season): string {
-  if (isFinale(season) || season.momentDone) return '';
+/** Voorsprong: één ster per gelukte scène, plus een bonusster als ze allebei lukten. */
+function lead(state: SceneState): string {
+  if (state.momentDone) return '';
   let out = '';
-  for (let i = 0; i < KEY_MOMENTS; i++) out += `<span class="star ${season.keys[i] === true ? 'on' : ''}">★</span>`;
-  const bonus = season.keys.length === KEY_MOMENTS && season.keys.every(Boolean);
+  for (let i = 0; i < KEY_MOMENTS; i++) out += `<span class="star ${state.keys[i] === true ? 'on' : ''}">★</span>`;
+  const bonus = state.keys.length === KEY_MOMENTS && state.keys.every(Boolean);
   return `<div class="lead" title="1 ster per gelukte scène, +1 als ze allebei lukken">Voorsprong ${out}<span class="star bonus ${bonus ? 'on' : ''}">★</span></div>`;
 }
 
@@ -146,25 +172,25 @@ function logList(entries: LogEntry[], sc: SceneView): string {
 }
 
 /** Doel, voortgang, beurten, logboek en "Wat doet …?" van de huidige scène — of de afloop als die vaststaat. */
-function actionBlock(game: Game, season: Season, sc: SceneView): string {
-  const progress = sceneProgress(season);
+function actionBlock(game: Game, state: SceneState, sc: SceneView): string {
+  const progress = sceneProgress(state);
   let dots = '';
   for (let i = 0; i < SCENE_GOAL; i++) dots += `<span class="dot ${i < progress ? 'on' : ''}"></span>`;
-  const entries = season.log.filter((e) => e.scene === season.scene);
+  const entries = state.log.filter((e) => e.scene === state.scene);
   const head = `<div class="scene-goal">
       <p><b>Doel van deze scène:</b> <span class="story-text">${escapeHtml(sc.doel)}</span></p>
       <p class="progress-line"><span class="dots" aria-label="${progress} van ${SCENE_GOAL} gelukt">${dots}</span>
-        <span>${progress}/${SCENE_GOAL} gelukt</span><span>·</span><span class="turns">beurten over: <b>${turnsLeft(season)}</b>/${SCENE_TURNS}</span></p>
+        <span>${progress}/${SCENE_GOAL} gelukt</span><span>·</span><span class="turns">beurten over: <b>${turnsLeft(state)}</b>/${SCENE_TURNS}</span></p>
     </div>
     ${logList(entries, sc)}`;
-  if (keyDone(season)) {
-    const ok = season.keys[season.scene];
+  if (keyDone(state)) {
+    const ok = state.keys[state.scene];
     const text = ok ? sc.gelukt : sc.mislukt;
     return `${head}<div class="key-result ${ok ? 'ok' : 'nok'}">
       <p class="key-verdict">${ok ? 'Scène gelukt! ★' : 'De beurten zijn op…'}</p>
       <p class="story-text">${escapeHtml(text)}</p>
       ${readBar(text, readerOf(game))}
-      <button class="btn big primary" data-action="scene-next">${season.scene + 1 >= MOMENT_SCENE ? 'Verder: het beslissende moment ▶' : 'Verder in het verhaal ▶'}</button>
+      <button class="btn big primary" data-action="scene-next">${state.scene + 1 >= MOMENT_SCENE ? 'Verder: het beslissende moment ▶' : 'Verder in het verhaal ▶'}</button>
     </div>`;
   }
   const hero = currentHero(game);
@@ -174,39 +200,36 @@ function actionBlock(game: Game, season: Season, sc: SceneView): string {
     </div>`;
 }
 
-function chapterCard(game: Game, season: Season): string {
-  const v = chapterView(season);
-  const r = currentRound(game, season);
-  const after = currentAftermath(game, season);
+function playCard(game: Game, c: PlayContext): string {
+  const state = c.state;
+  const r = currentRound(game);
+  const after = currentAftermath(game);
   const rollers = rollerCount(presentHeroes(game).length);
-  const need = neededSuccesses(rollers, season.meter);
-  const bonus = leadTotal(season);
+  const need = neededSuccesses(rollers, c.meter);
+  const bonus = leadTotal(state);
   let body: string;
-  if (season.momentDone) {
-    const result = season.results[season.chapter];
-    const text = after?.text ?? momentText(season, result !== 'mislukt');
-    const label = result === 'perfect' ? 'Perfect! De meter zakt én jullie vinden een aanwijzing.' : result === 'gehaald' ? 'Gelukt! Jullie vinden een aanwijzing.' : 'Mislukt… De Slechterik-meter stijgt met 2.';
-    const next = season.chapter + 1 >= CHAPTERS ? 'de finale' : `hoofdstuk ${season.chapter + 2}`;
-    body = `<div class="moment done ${result === 'mislukt' ? 'nok' : 'ok'}">
-      <p class="moment-result">${label}</p>
+  if (state.momentDone && c.result) {
+    const text = after?.text ?? c.outcome(c.result !== 'mislukt');
+    body = `<div class="moment done ${c.result === 'mislukt' ? 'nok' : 'ok'}">
+      <p class="moment-result">${c.resultLabel(c.result)}</p>
       <p class="moment-text story-text">${escapeHtml(text)}</p>
       ${readBar(text, readerOf(game))}
-      ${result !== 'mislukt' && !season.rewardTaken ? '<button class="btn big reward-btn" data-action="reward">Beloning: jullie vinden iets!</button>' : ''}
-      <p class="hint">Dit hoofdstuk is klaar. Stop de sessie en bewaar. Volgende keer: <b>${next}</b>.</p>
+      ${c.result !== 'mislukt' && !c.rewardTaken ? '<button class="btn big reward-btn" data-action="reward">Beloning: jullie vinden iets!</button>' : ''}
+      <p class="hint">${c.doneHint}</p>
     </div>`;
   } else if (r) {
     const s = successes(game, r);
     const total = Math.min(rollers, s.count + bonus);
     body = `<div class="moment">
       <h3>Beslissend moment</h3>
-      <p class="moment-text story-text">${escapeHtml(v.moment ?? '')}</p>
+      <p class="moment-text story-text">${escapeHtml(c.moment ?? '')}</p>
       <p>Elke held rolt één keer (4 of meer). Jullie hebben <b>${need} van ${rollers}</b> successen nodig.
         ${bonus > 0 ? `Jullie voorsprong telt mee: <b>${stars(bonus, bonus)} = ${bonus}</b>.` : ''} Nu: <b>${total}</b>.</p>
       ${bonus >= need ? '<p class="lead-safe">Dankzij jullie voorsprong is het al gelukt! Rol nu voor een <b>perfecte</b> afloop.</p>' : ''}
       ${rollersList(game, r)}
     </div>`;
-  } else if (season.scene >= MOMENT_SCENE) {
-    const momentTxt = v.moment ?? '';
+  } else if (state.scene >= MOMENT_SCENE) {
+    const momentTxt = c.moment ?? '';
     body = `<div class="scene moment-scene">
       <p class="scene-label">${SCENE_NAMES[MOMENT_SCENE]} — lees voor!</p>
       <p class="moment-text story-text">${escapeHtml(momentTxt)}</p>
@@ -215,47 +238,72 @@ function chapterCard(game: Game, season: Season): string {
       <p class="hint">Elke held rolt één keer. Nodig: ${need} van ${rollers} successen${bonus > 0 ? ` — jullie voorsprong (${bonus} ★) telt mee` : ''}.</p>
     </div>`;
   } else {
-    const sc = v.scenes[season.scene];
+    const sc = c.scenes[state.scene];
     const readText =
-      season.scene === 0 ? [v.recap ? `Vorige keer in Kakofonië: ${v.recap}` : '', v.intro ?? '', sc.tekst].filter(Boolean).join(' ') : sc.tekst;
+      state.scene === 0 ? [c.recap ? `Vorige keer in Kakofonië: ${c.recap}` : '', c.intro ?? '', sc.tekst].filter(Boolean).join(' ') : sc.tekst;
     body = `<div class="scene">
-      <p class="scene-label">${SCENE_NAMES[season.scene]} — lees voor!</p>
+      <p class="scene-label">${SCENE_NAMES[state.scene]} — lees voor!</p>
       <p class="scene-text story-text">${escapeHtml(sc.tekst)}</p>
-      ${season.log.some((e) => e.scene === season.scene) ? '' : readBar(readText, readerOf(game))}
-      ${actionBlock(game, season, sc)}
+      ${state.log.some((e) => e.scene === state.scene) ? '' : readBar(readText, readerOf(game))}
+      ${actionBlock(game, state, sc)}
     </div>`;
   }
-  // Wat er al gebeurde: eerdere scènes met het gevolg van hun sleutelmoment.
-  const earlier = v.scenes.slice(0, Math.min(season.scene, v.scenes.length));
+  // Wat er al gebeurde: eerdere scènes met hun logboek en afloop.
+  const earlier = c.scenes.slice(0, Math.min(state.scene, c.scenes.length));
   const earlierHtml =
-    earlier.length > 0 && !season.momentDone
+    earlier.length > 0 && !state.momentDone
       ? `<details class="earlier"><summary>Wat er al gebeurde (${earlier.length})</summary>${earlier
           .map(
             (sc, i) => `<p><b>${SCENE_NAMES[i]}:</b> <span class="story-text">${escapeHtml(sc.tekst)}</span></p>
-              ${logList(season.log.filter((e) => e.scene === i), sc)}
-              <p><b>${season.keys[i] ? 'Gelukt' : 'Mislukt'}:</b> <span class="story-text">${escapeHtml(season.keys[i] ? sc.gelukt : sc.mislukt)}</span></p>`,
+              ${logList(state.log.filter((e) => e.scene === i), sc)}
+              <p><b>${state.keys[i] ? 'Gelukt' : 'Mislukt'}:</b> <span class="story-text">${escapeHtml(state.keys[i] ? sc.gelukt : sc.mislukt)}</span></p>`,
           )
           .join('')}</details>`
       : '';
+  const facts = [
+    c.plaats ? `<li><b>Waar:</b> <span class="story-text">${escapeHtml(c.plaats.naam)} — ${escapeHtml(c.plaats.beschrijving)}</span></li>` : '',
+    c.figuur ? `<li><b>Wie loopt er rond:</b> <span class="story-text">${escapeHtml(c.figuur.naam)} — ${escapeHtml(c.figuur.beschrijving)}</span></li>` : '',
+  ].join('');
   return `<article class="chapter">
-    <p class="chapter-label">Hoofdstuk ${v.number} van ${CHAPTERS} · scène ${Math.min(season.scene, SCENES - 1) + 1} van ${SCENES}</p>
-    <h3 class="chapter-title">${escapeHtml(v.titel)}</h3>
-    ${v.recap && season.scene === 0 ? `<p class="recap"><b>Vorige keer in Kakofonië:</b> <span class="story-text">${escapeHtml(v.recap)}</span></p>` : ''}
-    ${v.intro && season.scene === 0 ? `<p class="story-text villain-intro">${escapeHtml(v.intro)}</p>` : ''}
-    <ul class="chapter-facts">
-      <li><b>Waar:</b> <span class="story-text">${escapeHtml(v.plaats.naam)} — ${escapeHtml(v.plaats.beschrijving)}</span></li>
-      <li><b>Wie loopt er rond:</b> <span class="story-text">${escapeHtml(v.figuur.naam)} — ${escapeHtml(v.figuur.beschrijving)}</span></li>
-    </ul>
-    <p class="goal"><b>Jullie doel vandaag:</b> <span class="story-text">${escapeHtml(v.doel)}</span></p>
+    <p class="chapter-label">${c.label} · scène ${Math.min(state.scene, SCENES - 1) + 1} van ${SCENES}</p>
+    <h3 class="chapter-title">${escapeHtml(c.titel)}</h3>
+    ${c.recap && state.scene === 0 ? `<p class="recap"><b>Vorige keer in Kakofonië:</b> <span class="story-text">${escapeHtml(c.recap)}</span></p>` : ''}
+    ${c.intro && state.scene === 0 ? `<p class="story-text villain-intro">${escapeHtml(c.intro)}</p>` : ''}
+    ${facts ? `<ul class="chapter-facts">${facts}</ul>` : ''}
+    <p class="goal"><b>Jullie doel vandaag:</b> <span class="story-text">${escapeHtml(c.doel)}</span></p>
     ${earlierHtml}
     ${body}
   </article>`;
 }
 
+function seasonContext(season: Season): PlayContext {
+  const v = chapterView(season);
+  const next = season.chapter + 1 >= CHAPTERS ? 'de finale' : `hoofdstuk ${season.chapter + 2}`;
+  return {
+    state: season,
+    label: `Hoofdstuk ${v.number} van ${CHAPTERS}`,
+    titel: v.titel,
+    recap: v.recap,
+    intro: v.intro,
+    scenes: v.scenes,
+    doel: v.doel,
+    plaats: v.plaats,
+    figuur: v.figuur,
+    moment: v.moment,
+    meter: season.meter,
+    result: season.momentDone ? season.results[season.chapter] ?? null : null,
+    outcome: (success) => momentText(season, success),
+    resultLabel: (r) =>
+      r === 'perfect' ? 'Perfect! De meter zakt én jullie vinden een aanwijzing.' : r === 'gehaald' ? 'Gelukt! Jullie vinden een aanwijzing.' : 'Mislukt… De Slechterik-meter stijgt met 2.',
+    doneHint: `Dit hoofdstuk is klaar. Stop de sessie en bewaar. Volgende keer: <b>${next}</b>.`,
+    rewardTaken: season.rewardTaken,
+  };
+}
+
 function finaleCard(game: Game, season: Season): string {
   const f = finaleView(season);
-  const r = currentRound(game, season);
-  const after = currentAftermath(game, season);
+  const r = currentRound(game);
+  const after = currentAftermath(game);
   let body: string;
   if (season.finished) {
     body = `<div class="moment done ok won">
@@ -302,10 +350,10 @@ export function seasonBlock(app: App): string {
     <header class="season-head">
       <div class="season-title">Seizoen van <b class="story-text">${escapeHtml(villainName(season))}</b>${isTestContent() ? ' <span class="test-badge">TESTVERHAAL</span>' : ''}</div>
       ${meter(season)}
-      ${lead(season)}
+      ${isFinale(season) ? '' : lead(season)}
       <div class="clue-count">Aanwijzingen: <b>${season.clues}/${CHAPTERS}</b></div>
     </header>
-    ${isFinale(season) ? finaleCard(game, season) : chapterCard(game, season)}
+    ${isFinale(season) ? finaleCard(game, season) : playCard(game, seasonContext(season))}
     ${
       clues.length > 0
         ? `<details class="clues"><summary>Gevonden aanwijzingen (${clues.length})</summary><ol>${clues
@@ -316,65 +364,103 @@ export function seasonBlock(app: App): string {
   </section>`;
 }
 
+/** HTML voor een los avontuur op de speeltafel. */
+export function adventureBlock(app: App): string {
+  const game = requireGame(app);
+  const adv = game.adventure;
+  if (game.sessionMode !== 'los') return '';
+  if (!adv) {
+    return `<section class="season"><div class="chapter"><p>Er is nog geen avontuur gekozen.</p>
+      <button class="btn big primary" data-action="adventure-other">Kies een avontuur</button></div></section>`;
+  }
+  const v = adventureView(adv);
+  const fresh = adv.scene === 0 && adv.log.length === 0 && !adv.momentDone;
+  const ctx: PlayContext = {
+    state: adv,
+    label: 'Los avontuur',
+    titel: v.titel,
+    recap: null,
+    intro: v.intro,
+    scenes: v.scenes,
+    doel: v.doel,
+    plaats: null,
+    figuur: null,
+    moment: v.moment,
+    meter: 0,
+    result: adv.result,
+    outcome: (success) => adventureOutcome(adv, success),
+    resultLabel: (r) => (r === 'perfect' ? 'Perfect! Wat een avontuur!' : r === 'gehaald' ? 'Gelukt!' : 'Net niet… maar wat een verhaal!'),
+    doneHint: 'Het avontuur is uit. Stop de sessie en bewaar.',
+    rewardTaken: adv.rewardTaken,
+  };
+  return `<section class="season adventure">
+    <header class="season-head">
+      <div class="season-title">Los avontuur${isTestAdventures() ? ' <span class="test-badge">TESTVERHAAL</span>' : ''}</div>
+      ${lead(adv)}
+      ${fresh ? '<button class="btn small" data-action="adventure-other">Ander avontuur</button>' : ''}
+    </header>
+    ${playCard(game, ctx)}
+  </section>`;
+}
+
 function resolveIfDone(app: App): void {
   const game = requireGame(app);
-  const season = game.season;
-  if (!season) return;
-  const r = currentRound(game, season);
+  const r = currentRound(game);
   if (!r) return;
   const s = successes(game, r);
   if (!s.done) return;
-  const key = keyOf(game, season);
+  const key = keyOf(game);
   round = null;
-  if (isFinale(season)) {
+  const season = game.season;
+  if (game.sessionMode === 'seizoen' && season && isFinale(season)) {
     const won = recordFinaleRound(game, s.count);
     aftermath = { key, kind: won ? 'won' : 'finale-round', text: won ? finaleWonText(season) : finaleRoundText(season, finaleRounds) };
     finaleRounds += 1;
   } else {
     const result = recordMoment(game, s.count);
-    aftermath = { key, kind: 'moment', text: momentText(season, result !== 'mislukt') };
+    const text = game.sessionMode === 'los' && game.adventure ? adventureOutcome(game.adventure, result !== 'mislukt') : season ? momentText(season, result !== 'mislukt') : '';
+    aftermath = { key, kind: 'moment', text };
   }
   app.changed();
 }
 
-/** Handelt de knoppen van het seizoensdeel af. Geeft true terug als de actie hier hoorde. */
+/** Handelt de knoppen van het seizoens-/avontuurdeel af. Geeft true terug als de actie hier hoorde. */
 export async function handleSeasonAction(app: App, action: string, id: string): Promise<boolean> {
   const game = requireGame(app);
-  const season = game.season;
-  if (!season) return false;
+  const play = activePlay(game);
+  const season = game.session > 0 && game.sessionMode === 'seizoen' ? game.season : null;
   switch (action) {
     case 'act-open':
       openActions(app);
       return true;
     case 'scene-next':
-      if (!keyDone(season)) return true;
+      if (!play || !keyDone(play)) return true;
       nextScene(game);
       app.changed();
       // Meteen (niet vloeiend) naar het begin van het hoofdstuk: een tik tijdens het scrollen zou ernaast landen.
       document.querySelector('.chapter')?.scrollIntoView({ block: 'start' });
       return true;
     case 'reward':
-      if (season.rewardTaken || !season.momentDone) return true;
       if (await openFind(app, 'Beloning! Jullie vinden iets')) takeReward(game);
       app.changed();
       return true;
     case 'moment-start':
       if (!(await confirmDialog('Klaar voor het beslissende moment? Daarna is dit hoofdstuk voorbij.', 'Ja, nu!', 'Nog even spelen'))) return true;
-      round = { key: keyOf(game, season), rolls: {}, allyDie: null };
+      round = { key: keyOf(game), rolls: {}, allyDie: null };
       aftermath = null;
       app.changed();
       return true;
     case 'finale-round':
-      if (season.hearts === null || season.finished) return true;
-      round = { key: keyOf(game, season), rolls: {}, allyDie: null };
+      if (!season || season.hearts === null || season.finished) return true;
+      round = { key: keyOf(game), rolls: {}, allyDie: null };
       app.changed();
       return true;
     case 'group-roll': {
-      const r = currentRound(game, season);
+      const r = currentRound(game);
       if (!r || id in r.rolls) return true;
       const hero = findHero(game, id);
       openDice(app, id, {
-        title: isFinale(season) ? `${hero.name} valt aan!` : `${hero.name}: beslissend moment`,
+        title: season && isFinale(season) ? `${hero.name} valt aan!` : `${hero.name}: beslissend moment`,
         onResult: (success) => {
           r.rolls[id] = success;
           resolveIfDone(app);
@@ -383,7 +469,7 @@ export async function handleSeasonAction(app: App, action: string, id: string): 
       return true;
     }
     case 'ally-roll': {
-      const r = currentRound(game, season);
+      const r = currentRound(game);
       if (!r || r.allyDie !== null) return true;
       r.allyDie = rollDice(1)[0];
       app.changed();

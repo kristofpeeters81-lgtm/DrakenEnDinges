@@ -2,6 +2,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { decodeContent, isStringList } from './codec';
+import { adventureCount, adventureOutcome, adventureView } from './adventure-view';
+import { newAdventure } from '../game/adventure';
 import { drawEidastinkt, drawItem, eidastinktCount, getItem, getOpening, itemCount, openingCount } from './index';
 import { chapterView, finaleView, seasonCounts } from './season-view';
 import { CHAPTERS, MOMENT_SCENE } from '../game/season';
@@ -82,6 +84,21 @@ describe('verborgen inhoud', () => {
       if (pick !== null) owned.push(pick);
     }
     expect(drawItem(owned)).toBeNull();
+  });
+
+  it('losse avonturen: minstens 15, en elk pad (begin/wending gelukt of mislukt) heeft scènes, acties en een moment', () => {
+    const n = adventureCount();
+    expect(n >= 15).toBe(true);
+    let problems = 0;
+    for (let i = 0; i < n; i++) {
+      for (const keys of [[true, true], [true, false], [false, true], [false, false]]) {
+        const adv = { ...newAdventure(i), keys };
+        const view = adventureView(adv);
+        if (view.scenes.length !== 2 || view.moment === null || view.scenes.some((s) => s.acties.length < 8 || s.doel.length < 10)) problems++;
+        if (adventureOutcome(adv, true).length < 40 || adventureOutcome(adv, false).length < 40) problems++;
+      }
+    }
+    expect(problems).toBe(0);
   });
 
   it('er zijn genoeg Eidastinkt-voorvallen', () => {

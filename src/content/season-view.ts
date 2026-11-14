@@ -65,7 +65,7 @@ export interface SceneView {
   mislukt: string;
 }
 
-function sceneView(sc: Scene, vv: Record<string, string>): SceneView {
+export function sceneView(sc: Scene, vv: Record<string, string>): SceneView {
   return {
     tekst: fill(sc.tekst, vv),
     doel: fill(sc.doel, vv),

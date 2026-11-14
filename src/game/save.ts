@@ -4,11 +4,12 @@
 
 import { CHAPTERS, KEY_MOMENTS, METER_MAX, MOMENT_SCENE, OWN_IDEA, type ChapterResult, type LogEntry, type Season } from './season';
 import { emptyStats, type HeroStats } from '../data/growth-data';
+import type { Adventure } from './adventure';
 import { MAX_BONUS_FRIES, MAX_BUDDY_STAGE, MAX_EXTRA_GOOD, MAX_ITEM_LEVEL, MAX_LEVEL, MAX_POWER_USES, type Buddy } from './growth';
 import { MAX_FRIES, MAX_HEROES, MAX_ITEMS, type Game, type Hero, type HeroItem, type SessionMode } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export class SaveError extends Error {}
 
@@ -48,6 +49,7 @@ function migrate(game: unknown, fromVersion: number): unknown {
   if (fromVersion < 7) g = v6ToV7(g);
   if (fromVersion < 8) g = v7ToV8(g);
   if (fromVersion < 9) g = v8ToV9(g);
+  if (fromVersion < 10) g = v9ToV10(g);
   return g;
 }
 
@@ -60,6 +62,12 @@ function migrate(game: unknown, fromVersion: number): unknown {
 /** Versie 8: sleutelmomenten met vertakkingen i.p.v. sterren uit vrije worpen. Een lopend hoofdstuk krijgt
  *  "gelukte" sleutels voor de scènes die al voorbij zijn (zo verliest niemand voorsprong). */
 /** Versie 9: scènes met acties en een verhaallogboek. Oud seizoen: leeg logboek. */
+/** Versie 10: losse avonturen als mini-hoofdstuk (vervangen de beginscènes). Oud spel: nog geen avontuur. */
+function v9ToV10(game: unknown): unknown {
+  if (!isRecord(game)) return game;
+  return { ...game, adventure: null, usedAdventures: [] };
+}
+
 function v8ToV9(game: unknown): unknown {
   if (!isRecord(game) || !isRecord(game.season)) return game;
   return { ...game, season: { ...game.season, log: [] } };
@@ -252,6 +260,22 @@ function readSeason(v: unknown): Season | null {
   };
 }
 
+function readAdventure(v: unknown): Adventure | null {
+  if (v === null) return null;
+  if (!isRecord(v)) broken();
+  const result = v.result;
+  if (result !== null && !RESULTS.includes(result as ChapterResult)) broken();
+  return {
+    index: num(v, 'index', 0, 9999),
+    scene: num(v, 'scene', 0, MOMENT_SCENE),
+    keys: readKeys(v.keys),
+    log: readLog(v.log),
+    momentDone: bool(v, 'momentDone'),
+    result: result as ChapterResult | null,
+    rewardTaken: bool(v, 'rewardTaken'),
+  };
+}
+
 function readLog(v: unknown): LogEntry[] {
   if (!Array.isArray(v) || v.length > 100) broken();
   return v.map((e: unknown) => {
@@ -285,5 +309,7 @@ function readGame(v: unknown): Game {
     season: readSeason(v.season),
     usedVillains: readUsed(v.usedVillains),
     sessionMode: readMode(v.sessionMode),
+    adventure: readAdventure(v.adventure),
+    usedAdventures: readUsed(v.usedAdventures),
   };
 }

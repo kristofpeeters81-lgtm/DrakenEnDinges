@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { POWERS } from '../data/ideas';
 import { APP_ID, parseGame, saveFileName, SaveError, serializeGame, SAVE_VERSION } from './save';
-import { addHero, beginSeasonSession, emptyDraft, newGame, recordMoment, startSession } from './state';
+import { addHero, beginLooseSession, beginSeasonSession, emptyDraft, newGame, recordMoment, startSession } from './state';
 
 function sampleGame() {
   const g = newGame(1000);
@@ -170,6 +170,20 @@ describe('spelbestand', () => {
     raw.version = 8;
     delete raw.game.season.log;
     expect(parseGame(JSON.stringify(raw)).season?.log).toEqual([]);
+  });
+
+  it('bewaart een los avontuur volledig en vult bij versie 9 een leeg avontuur aan', () => {
+    const g = sampleGame();
+    beginLooseSession(g, 15);
+    if (g.adventure) g.adventure.log = [{ scene: 0, hero: 'Mie', action: 2, text: '', success: false }];
+    expect(parseGame(serializeGame(g)).adventure).toEqual(g.adventure);
+    const raw = JSON.parse(serializeGame(g)) as { version: number; game: Record<string, unknown> };
+    raw.version = 9;
+    delete raw.game.adventure;
+    delete raw.game.usedAdventures;
+    const old = parseGame(JSON.stringify(raw));
+    expect(old.adventure).toBeNull();
+    expect(old.usedAdventures).toEqual([]);
   });
 
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {
