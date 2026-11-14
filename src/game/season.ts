@@ -9,6 +9,9 @@
 // altijd winbaar, een hoge meter maakt het enkel langer en spannender.
 
 export const CHAPTERS = 3;
+/** Scènes per hoofdstuk: 0 = begin, 1 = wending, 2 = beslissend moment. */
+export const SCENES = 3;
+export const MOMENT_SCENE = SCENES - 1;
 export const METER_MAX = 6;
 export const MOMENT_TARGET = 4;
 export const MAX_LEAD_FROM_ROLLS = 2;
@@ -30,6 +33,8 @@ export interface Season {
   results: ChapterResult[];
   /** Het beslissende moment van dit hoofdstuk is al gespeeld (volgende sessie = volgend hoofdstuk). */
   momentDone: boolean;
+  /** Huidige scène in het hoofdstuk (0 = begin, 1 = wending, 2 = beslissend moment). */
+  scene: number;
   /** Voorsprong-sterren uit geslaagde worpen in dit hoofdstuk (0..MAX_LEAD_FROM_ROLLS). */
   leadRolls: number;
   /** De groep zei: doel van vandaag gehaald (+1 voorsprong). */
@@ -72,6 +77,7 @@ export function newSeason(usedVillains: readonly number[], counts: ContentCounts
     clues: 0,
     results: [],
     momentDone: false,
+    scene: 0,
     leadRolls: 0,
     goalMet: false,
     hearts: null,
@@ -99,6 +105,12 @@ export function neededSuccesses(rollers: number, meter: number): number {
 }
 
 /** Een geslaagde worp tijdens het hoofdstuk. Geeft true terug als dat een voorsprong-ster opleverde. */
+/** Verder in het verhaal: naar de volgende scène (tot aan het beslissende moment). */
+export function advanceScene(season: Season): void {
+  if (isFinale(season) || season.momentDone) return;
+  season.scene = Math.min(MOMENT_SCENE, season.scene + 1);
+}
+
 export function addLead(season: Season): boolean {
   if (isFinale(season) || season.momentDone || season.leadRolls >= MAX_LEAD_FROM_ROLLS) return false;
   season.leadRolls += 1;
@@ -112,6 +124,7 @@ export function leadTotal(season: Season): number {
 /** `diceSuccesses` = geslaagde worpen bij het moment zelf; de voorsprong telt er automatisch bij. */
 export function resolveMoment(season: Season, diceSuccesses: number, rollers: number): ChapterResult {
   if (isFinale(season) || season.momentDone) throw new Error('Geen beslissend moment meer in dit hoofdstuk');
+  season.scene = MOMENT_SCENE;
   const successes = Math.min(rollers, diceSuccesses + leadTotal(season));
   const result: ChapterResult =
     successes >= rollers ? 'perfect' : successes >= neededSuccesses(rollers, season.meter) ? 'gehaald' : 'mislukt';
@@ -128,6 +141,7 @@ export function advanceChapter(season: Season): void {
   if (!season.momentDone || isFinale(season)) return;
   season.chapter += 1;
   season.momentDone = false;
+  season.scene = 0;
   season.leadRolls = 0;
   season.goalMet = false;
 }

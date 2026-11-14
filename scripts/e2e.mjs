@@ -104,6 +104,10 @@ async function playGroup(value) {
 }
 
 async function playMoment(goal, value) {
+  while (await page.$('[data-action="scene-next"]')) {
+    await click('[data-action="scene-next"]');
+    await answer('scène', 'yes');
+  }
   await click('[data-action="moment-start"]');
   await answer('beslissende moment', 'yes');
   await answer('doel', goal);
@@ -321,7 +325,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 4, 'bestand heeft app-naam en versie (4)');
+  check(saved.app === 'draken-en-dinges' && saved.version === 5, 'bestand heeft app-naam en versie (5)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -368,6 +372,18 @@ try {
   check((await text('.chapter-label')).includes('Hoofdstuk 1 van 3'), 'seizoen start bij hoofdstuk 1');
   check((await text('.meter b')) === '0/6', 'Slechterik-meter start op 0');
   await shot('seizoen-hoofdstuk-1');
+  check((await text('.scene-label')).includes('Het begin'), 'hoofdstuk start met de beginscène');
+  check((await page.$('[data-action="moment-start"]')) === null, 'beslissend moment komt pas na de scènes');
+  await click('[data-action="ideas-toggle"]');
+  await page.waitForSelector('.ideas-list');
+  check((await page.$$('.ideas-list li')).length >= 2, 'ideeën als jullie vastzitten: minstens 2');
+  await click('[data-action="scene-next"]');
+  await answer('scène', 'yes');
+  await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
+  check(true, 'verder in het verhaal: de wending');
+  check((await page.$('.earlier')) !== null, 'de eerdere scène blijft na te lezen');
+  check((await page.$('.ideas-list')) === null, 'ideeën klappen dicht bij een nieuwe scène');
+  await shot('seizoen-wending');
 
   // Geslaagde gewone worp → voorsprong-ster
   await click('.turn-banner [data-action="roll"]');
@@ -413,7 +429,7 @@ try {
     await page.waitForFunction(() => !document.querySelector('.rollers'));
     rounds++;
   }
-  check((await page.$('.moment.won')) !== null, `finale gewonnen na ${rounds} rondes (ook na een mislukte eerste ronde)`);
+  check((await page.$('.moment.won')) !== null, `finale gewonnen na ${rounds} ${rounds === 1 ? 'ronde' : 'rondes'}`);
   await shot('seizoen-gewonnen');
   await stopSessionLater();
   await click('[data-action="start"]');

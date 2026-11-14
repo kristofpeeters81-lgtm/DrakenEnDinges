@@ -2,7 +2,7 @@
 // bewaren (automatisch en als bestand) gebeurt elders.
 
 import { isListedPower } from '../data/ideas';
-import { addLead, advanceChapter, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
+import { addLead, advanceChapter, advanceScene, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
 
 export const MAX_HEROES = 6;
 export const START_FRIES = 3;
@@ -235,6 +235,11 @@ export function recordSuccessForLead(game: Game): boolean {
   const added = addLead(game.season);
   if (added) touch(game);
   return added;
+}
+
+export function nextScene(game: Game): void {
+  advanceScene(requireSeason(game));
+  touch(game);
 }
 
 export function setGoalMet(game: Game, met: boolean): void {

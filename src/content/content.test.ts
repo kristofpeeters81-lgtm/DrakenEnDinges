@@ -3,6 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { decodeContent, isStringList } from './codec';
 import { drawEidastinkt, eidastinktCount, getOpening, openingCount } from './index';
+import { chapterView, finaleView, seasonCounts } from './season-view';
+import { CHAPTERS, MOMENT_SCENE } from '../game/season';
 
 function encode(value: unknown): string {
   let binary = '';
@@ -32,6 +34,28 @@ describe('verborgen inhoud', () => {
     }
     expect(bad).toBe(0);
     expect(getOpening(n) === null).toBe(true);
+  });
+
+  it('seizoensinhoud: elk hoofdstuk heeft 2 scènes met ideeën en alle plaatshouders zijn ingevuld', () => {
+    const c = seasonCounts();
+    expect(c.villains >= 3).toBe(true);
+    let problems = 0;
+    for (let v = 0; v < c.villains; v++) {
+      const season = {
+        villain: v, places: [0, 1, 2, 3], figures: [0, 1, 2], chapter: 0, meter: 0, clues: 0, results: [],
+        momentDone: false, scene: 0, leadRolls: 0, goalMet: false, hearts: null, heartsStart: null, finished: false,
+      };
+      for (let ch = 0; ch < CHAPTERS; ch++) {
+        season.chapter = ch;
+        const view = chapterView(season);
+        const texts = [view.titel, view.doel, view.moment, ...view.scenes.reduce<string[]>((acc, s) => acc.concat([s.tekst], s.ideeen), [])];
+        if (view.scenes.length !== MOMENT_SCENE || view.scenes.some((s) => s.ideeen.length < 2)) problems++;
+        problems += texts.filter((t) => /\{\w+\}/.test(t)).length;
+      }
+      season.chapter = CHAPTERS;
+      if (/\{\w+\}/.test(finaleView(season).tekst)) problems++;
+    }
+    expect(problems).toBe(0);
   });
 
   it('er zijn genoeg Eidastinkt-voorvallen', () => {

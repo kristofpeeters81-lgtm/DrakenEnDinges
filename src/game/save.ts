@@ -2,11 +2,11 @@
 // Wordt gebruikt voor het bestand (bewaren/laden) én voor de automatische reservekopie in de browser.
 // Oude bestanden moeten na app-updates blijven werken: verhoog SAVE_VERSION en voeg een stap toe in migrate().
 
-import { CHAPTERS, MAX_LEAD_FROM_ROLLS, METER_MAX, type ChapterResult, type Season } from './season';
+import { CHAPTERS, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, type ChapterResult, type Season } from './season';
 import { MAX_FRIES, MAX_HEROES, type Game, type Hero, type SessionMode } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export class SaveError extends Error {}
 
@@ -41,12 +41,19 @@ function migrate(game: unknown, fromVersion: number): unknown {
   if (fromVersion < 2) g = v1ToV2(g);
   if (fromVersion < 3) g = v2ToV3(g);
   if (fromVersion < 4) g = v3ToV4(g);
+  if (fromVersion < 5) g = v4ToV5(g);
   return g;
 }
 
 /** Versie 2: helden kregen een "rolled"-slot (één worp per beurt). Oude spellen: nog niemand heeft gerold. */
 /** Versie 3: beginscènes (welke nu, welke al geweest). Oude spellen: nog geen. */
 /** Versie 4: seizoenen. Oude spellen: nog geen seizoen; een lopende sessie was een los avontuur. */
+/** Versie 5: scènes in een hoofdstuk. Oud seizoen: begin van het hoofdstuk, of het moment als dat al gespeeld is. */
+function v4ToV5(game: unknown): unknown {
+  if (!isRecord(game) || !isRecord(game.season)) return game;
+  return { ...game, season: { ...game.season, scene: game.season.momentDone === true ? MOMENT_SCENE : 0 } };
+}
+
 function v3ToV4(game: unknown): unknown {
   if (!isRecord(game)) return game;
   return { ...game, season: null, usedVillains: [], sessionMode: game.sessionActive === true ? 'los' : null };
@@ -145,6 +152,7 @@ function readSeason(v: unknown): Season | null {
     clues: num(v, 'clues', 0, CHAPTERS),
     results,
     momentDone: bool(v, 'momentDone'),
+    scene: num(v, 'scene', 0, MOMENT_SCENE),
     leadRolls: num(v, 'leadRolls', 0, MAX_LEAD_FROM_ROLLS),
     goalMet: bool(v, 'goalMet'),
     hearts: readNullableCount(v.hearts),

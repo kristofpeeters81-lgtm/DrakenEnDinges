@@ -146,11 +146,22 @@ Alles wordt opgeslagen op de tablet (met exportknop als back-up).
 | 3b | **Beginscènes** (tussenoplossing tot blok 4–5): 30 verborgen beginscènes via sub-agent, één per sessie, "Andere beginscène", nooit herhaald tot alle 30 geweest zijn. Spelbestand → versie 3. Screenshots in de browsertest maken verborgen tekst wazig | Sessie starten → beginscène voorlezen → spelen met de Pruttelpot |
 | 4 ✅ | Gebouwd 2026-11-14 met **testinhoud**: seizoen = 3 hoofdstukken + finale; los avontuur blijft kiesbaar; beslissend moment met groepsworp (+ bondgenoot bij 1–2 spelers); **voorsprong** (geslaagde worpen max. 2 + "doel gehaald" 1, elke ster = succes) zodat een goede avond niet op het einde mislukt door pech; meter altijd zichtbaar; finale met levens, altijd winbaar. Spelbestand → versie 4. 89 unit-tests + browsertest met een volledig seizoen groen. Verhaalteksten krijgen class `story-text` (wazig in testscreenshots) | Volledig testseizoen gespeeld |
 | 4 | **Seizoen-generator** + Slechterik-meter (met testinhoud) | Nieuw seizoen → 4 samenhangende sessies, meter werkt |
+| 5a ✅ | Gebouwd 2026-11-14: hoofdstuk = 3 scènes (begin, wending, beslissend moment), elk met "Ideeën als jullie vastzitten" (verborgen tot je tikt), concreet doel, "Wat er al gebeurde". Inhoudsvorm: `stappen[i].scenes[2]` met `tekst` + `ideeen` (zie `src/content/season-content.ts`). Spelbestand → versie 5. Aanleiding: "doel vandaag" was te vaag om op in te pikken | Hoofdstuk scène per scène doorlopen |
 | 5 | **Sessieverloop**: scènes, opdrachten, rugzak/voorwerpen, pech-toestanden | Een volledige testsessie doorlopen |
 | 5b | **Groei**: level-up-kaarten, sterren + winkeltje, titels, maatjes, voorwerp-upgrades, gastpersonages, schaling van de slechterik | Na een testsessie level-up kiezen, en een gast start op groepsniveau |
 | 6 | **Voorleesmodus** (om beurt / app-stem) | Wisselen werkt, de stem leest Nederlands |
 | 7 | **Echte inhoud** (spoilervrij, via sub-agent, in porties) | Seizoen 1 speelbaar |
 | 8 | **Afwerking**: tv-weergave, offline, GitHub Pages, testprotocol | Eerste echte speelavond |
+
+## 6b. Toekomstidee (niet beslist): groeien richting D&D / Pathfinder
+
+Als het spel goed bevalt, kan er een **regelniveau per spel** komen, stap voor stap in te schakelen:
+1. **Nu**: 1 D6, goed in / slecht in, frietjes.
+2. **Niveau 2**: eigenschappen met een getal (+1/+2), levenspunten, D20 voor spannende momenten.
+3. **Niveau 3**: klassen, spreuken, uitrusting, tegenstanders met waarden (richting D&D 5e / Pathfinder "light").
+
+Technisch kan dat: regels zitten in aparte, geteste modules en het spelbestand migreert (bv. "goed in" → +2).
+De app doet het rekenwerk, zodat het leren van regels niet verdrinkt in boekhouding.
 
 ## 7. Open punten
 

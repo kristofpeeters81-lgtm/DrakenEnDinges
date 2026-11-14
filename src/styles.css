@@ -597,6 +597,66 @@ small {
   padding: 8px 14px;
 }
 
+.scene {
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-left: 12px solid var(--accent);
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-top: 12px;
+}
+
+.scene-label {
+  font-family: var(--title);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 0 0 6px !important;
+}
+
+.chapter .scene-text {
+  font-size: 25px;
+  line-height: 1.45;
+}
+
+.scene-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scene-actions .btn {
+  margin: 6px 10px 6px 0;
+}
+
+.ideas-list {
+  background: #ecfccb;
+  border-radius: 12px;
+  padding: 10px 14px 10px 34px;
+  margin: 8px 0 0;
+  font-size: 21px;
+}
+
+.ideas-list li {
+  margin-bottom: 4px;
+}
+
+.earlier {
+  margin: 4px 0 0;
+  color: var(--soft);
+}
+
+.earlier summary {
+  cursor: pointer;
+  font-family: var(--title);
+  font-size: 16px;
+}
+
+.earlier p {
+  font-size: 19px !important;
+}
+
 .moment {
   border: 3px dashed var(--accent);
   border-radius: 14px;

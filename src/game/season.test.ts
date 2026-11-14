@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   addLead,
   advanceChapter,
+  advanceScene,
+  MOMENT_SCENE,
   leadTotal,
   MAX_LEAD_FROM_ROLLS,
   CHAPTERS,
@@ -112,6 +114,33 @@ describe('beslissend moment', () => {
       advanceChapter(s);
     }
     expect(isFinale(s)).toBe(true);
+  });
+});
+
+describe('scènes in een hoofdstuk', () => {
+  it('begin → wending → beslissend moment, en niet verder', () => {
+    const s = newSeason([], counts);
+    expect(s.scene).toBe(0);
+    advanceScene(s);
+    expect(s.scene).toBe(1);
+    advanceScene(s);
+    expect(s.scene).toBe(MOMENT_SCENE);
+    advanceScene(s);
+    expect(s.scene).toBe(MOMENT_SCENE);
+  });
+
+  it('nieuw hoofdstuk begint weer bij de eerste scène', () => {
+    const s = newSeason([], counts);
+    advanceScene(s);
+    resolveMoment(s, 3, 3);
+    advanceChapter(s);
+    expect(s.scene).toBe(0);
+  });
+
+  it('het beslissende moment zet de scène op het moment (ook als jullie het vroeger starten)', () => {
+    const s = newSeason([], counts);
+    resolveMoment(s, 3, 3);
+    expect(s.scene).toBe(MOMENT_SCENE);
   });
 });
 

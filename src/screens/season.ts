@@ -13,8 +13,8 @@ import {
   villainName,
 } from '../content/season-view';
 import { rollDice } from '../game/dice';
-import { CHAPTERS, hasAlly, isFinale, leadTotal, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_TARGET, neededSuccesses, rollerCount, type Season } from '../game/season';
-import { findHero, presentHeroes, recordFinaleRound, recordMoment, setGoalMet, type Game } from '../game/state';
+import { CHAPTERS, hasAlly, isFinale, leadTotal, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, MOMENT_TARGET, neededSuccesses, rollerCount, SCENES, type Season } from '../game/season';
+import { findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, setGoalMet, type Game } from '../game/state';
 import { ask, confirmDialog } from '../ui/dialog';
 import { DICE_ICON, dieSvg, escapeHtml } from '../ui/dom';
 import { openDice } from './dice';
@@ -32,7 +32,11 @@ interface Aftermath {
   kind: 'moment' | 'finale-round' | 'won';
 }
 
+const SCENE_NAMES = ['Het begin', 'De wending', 'Het beslissende moment'];
+
 let round: GroupRound | null = null;
+/** Ideeën opengeklapt voor deze scène (sleutel = hoofdstuk + scène). */
+let ideasOpenFor = '';
 let aftermath: Aftermath | null = null;
 let finaleRounds = 0;
 
@@ -130,23 +134,45 @@ function chapterCard(game: Game, season: Season): string {
       ${bonus >= need ? '<p class="lead-safe">Dankzij jullie voorsprong is het al gelukt! Rol nu voor een <b>perfecte</b> afloop.</p>' : ''}
       ${rollersList(game, r)}
     </div>`;
+  } else if (season.scene >= MOMENT_SCENE) {
+    momentHtml = `<div class="scene moment-scene">
+      <p class="scene-label">${SCENE_NAMES[MOMENT_SCENE]}</p>
+      <p class="moment-text story-text">${escapeHtml(v.moment)}</p>
+      <button class="btn big primary" data-action="moment-start">Start het beslissende moment</button>
+      <p class="hint">Elke held rolt één keer. Nodig: ${need} van ${rollers} successen${leadTotal(season) > 0 ? ' — jullie voorsprong telt mee' : ''}.</p>
+    </div>`;
   } else {
-    momentHtml = `<div class="moment-start">
-      <button class="btn big primary" data-action="moment-start">Naar het beslissende moment</button>
-      <p class="hint">Als jullie klaar zijn met spelen: nodig ${need} van ${rollers} successen.</p>
+    const sc = v.scenes[season.scene];
+    const key = `${keyOf(game, season)}|${season.scene}`;
+    const open = ideasOpenFor === key;
+    momentHtml = `<div class="scene">
+      <p class="scene-label">${SCENE_NAMES[season.scene]} — lees voor!</p>
+      <p class="scene-text story-text">${escapeHtml(sc.tekst)}</p>
+      <div class="scene-actions">
+        <button class="btn small" data-action="ideas-toggle">${open ? 'Ideeën verbergen' : 'Ideeën als jullie vastzitten'}</button>
+        <button class="btn big primary" data-action="scene-next">${season.scene + 1 >= MOMENT_SCENE ? 'Verder: het beslissende moment ▶' : 'Verder in het verhaal ▶'}</button>
+      </div>
+      ${open ? `<ul class="ideas-list">${sc.ideeen.map((i) => `<li class="story-text">${escapeHtml(i)}</li>`).join('')}</ul>` : ''}
     </div>`;
   }
+  const earlier = v.scenes.slice(0, Math.min(season.scene, v.scenes.length));
+  const earlierHtml =
+    earlier.length > 0 && !season.momentDone
+      ? `<details class="earlier"><summary>Wat er al gebeurde (${earlier.length})</summary>${earlier
+          .map((sc, i) => `<p><b>${SCENE_NAMES[i]}:</b> <span class="story-text">${escapeHtml(sc.tekst)}</span></p>`)
+          .join('')}</details>`
+      : '';
   return `<article class="chapter">
-    <p class="chapter-label">Hoofdstuk ${v.number} van ${CHAPTERS}</p>
+    <p class="chapter-label">Hoofdstuk ${v.number} van ${CHAPTERS} · scène ${Math.min(season.scene, SCENES - 1) + 1} van ${SCENES}</p>
     <h3 class="chapter-title">${escapeHtml(v.titel)}</h3>
-    ${v.recap ? `<p class="recap"><b>Vorige keer in Kakofonië:</b> <span class="story-text">${escapeHtml(v.recap)}</span></p>` : ''}
-    ${v.intro ? `<p class="story-text villain-intro">${escapeHtml(v.intro)}</p>` : ''}
-    <p class="story-text">${escapeHtml(v.tekst)}</p>
+    ${v.recap && season.scene === 0 ? `<p class="recap"><b>Vorige keer in Kakofonië:</b> <span class="story-text">${escapeHtml(v.recap)}</span></p>` : ''}
+    ${v.intro && season.scene === 0 ? `<p class="story-text villain-intro">${escapeHtml(v.intro)}</p>` : ''}
     <ul class="chapter-facts">
       <li><b>Waar:</b> <span class="story-text">${escapeHtml(v.plaats.naam)} — ${escapeHtml(v.plaats.beschrijving)}</span></li>
       <li><b>Wie loopt er rond:</b> <span class="story-text">${escapeHtml(v.figuur.naam)} — ${escapeHtml(v.figuur.beschrijving)}</span></li>
     </ul>
     <p class="goal"><b>Jullie doel vandaag:</b> <span class="story-text">${escapeHtml(v.doel)}</span></p>
+    ${earlierHtml}
     ${momentHtml}
   </article>`;
 }
@@ -240,6 +266,19 @@ export async function handleSeasonAction(app: App, action: string, id: string): 
   const season = game.season;
   if (!season) return false;
   switch (action) {
+    case 'ideas-toggle': {
+      const key = `${keyOf(game, season)}|${season.scene}`;
+      ideasOpenFor = ideasOpenFor === key ? '' : key;
+      app.changed();
+      return true;
+    }
+    case 'scene-next':
+      if (!(await confirmDialog('Klaar met deze scène? Dan gaat het verhaal verder.', 'Ja, verder!', 'Nog even'))) return true;
+      nextScene(game);
+      ideasOpenFor = '';
+      app.changed();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return true;
     case 'moment-start':
       if (!(await confirmDialog('Klaar om te eindigen met het beslissende moment? Daarna is dit hoofdstuk voorbij.', 'Ja, nu!', 'Nog even spelen'))) return true;
       {

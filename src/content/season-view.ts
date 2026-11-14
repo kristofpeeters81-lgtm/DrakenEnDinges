@@ -48,7 +48,8 @@ export interface ChapterView {
   recap: string | null;
   /** Enkel in hoofdstuk 1: kennismaking met de slechterik en wat hij wil. */
   intro: string | null;
-  tekst: string;
+  /** Begin en wending, met de bouwstenen ingevuld. */
+  scenes: Array<{ tekst: string; ideeen: string[] }>;
   doel: string;
   plaats: { naam: string; beschrijving: string };
   figuur: { naam: string; beschrijving: string };
@@ -74,7 +75,7 @@ export function chapterView(season: Season): ChapterView {
     titel: fill(step.titel, vv),
     recap: recapOf(season, i),
     intro: i === 0 ? `${fill(v.intro, vv)} ${fill(v.doel, vv)}` : null,
-    tekst: fill(step.tekst, vv),
+    scenes: step.scenes.map((sc) => ({ tekst: fill(sc.tekst, vv), ideeen: sc.ideeen.map((i) => fill(i, vv)) })),
     doel: fill(step.doel, vv),
     plaats: c.plaatsen[season.places[i]],
     figuur: c.figuren[season.figures[i]],

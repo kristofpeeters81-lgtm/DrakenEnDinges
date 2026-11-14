@@ -2,11 +2,18 @@
 // In teksten mogen deze plaatshouders staan: {slechterik} {handlanger} {plaats} {figuur}.
 // Per hoofdstuk i: {plaats} = plaats i, {figuur} = figuur i. Finale: {plaats} = de laatste plaats, {figuur} = figuur 0.
 
+/** Een scène om voor te lezen: een concrete situatie die eindigt met een vraag aan de helden. */
+export interface Scene {
+  tekst: string;
+  /** 2–3 mogelijke aanpakken, verborgen tot iemand op "Ideeën" tikt. */
+  ideeen: string[];
+}
+
 export interface SeasonStep {
   titel: string;
-  /** Wat de slechterik nu van plan is (begin van het hoofdstuk). */
-  tekst: string;
-  /** "Jullie doel vandaag". */
+  /** Precies 2 scènes: [0] het begin (waar staan jullie, wat gebeurt er net), [1] de wending (iets onverwachts). */
+  scenes: Scene[];
+  /** "Jullie doel vandaag": concreet en haalbaar in één avond (bv. "Vind X vóór Y"). */
   doel: string;
   /** Uitleg bij het beslissende moment. */
   moment: string;
@@ -61,8 +68,20 @@ function isNamed(v: unknown): v is NamedThing {
   return isRecord(v) && isStr(v.naam) && isStr(v.beschrijving);
 }
 
+function isScene(v: unknown): v is Scene {
+  return isRecord(v) && isStr(v.tekst) && isStrList(v.ideeen, 2);
+}
+
+export const STORY_SCENES = 2;
+
 function isStep(v: unknown): v is SeasonStep {
-  return isRecord(v) && ['titel', 'tekst', 'doel', 'moment', 'gelukt', 'mislukt'].every((k) => isStr(v[k]));
+  return (
+    isRecord(v) &&
+    ['titel', 'doel', 'moment', 'gelukt', 'mislukt'].every((k) => isStr(v[k])) &&
+    Array.isArray(v.scenes) &&
+    v.scenes.length === STORY_SCENES &&
+    v.scenes.every(isScene)
+  );
 }
 
 function isVillain(v: unknown, chapters: number): v is VillainContent {

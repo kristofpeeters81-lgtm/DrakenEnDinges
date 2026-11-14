@@ -95,6 +95,17 @@ describe('spelbestand', () => {
     expect(loaded.sessionMode).toBe('seizoen');
   });
 
+  it('een seizoen uit versie 4 krijgt de juiste scène', () => {
+    const g = sampleGame();
+    beginSeasonSession(g, { villains: 3, places: 6, figures: 4 });
+    const raw = JSON.parse(serializeGame(g)) as { version: number; game: { season: Record<string, unknown> } };
+    raw.version = 4;
+    delete raw.game.season.scene;
+    expect(parseGame(JSON.stringify(raw)).season?.scene).toBe(0);
+    raw.game.season.momentDone = true;
+    expect(parseGame(JSON.stringify(raw)).season?.scene).toBe(2);
+  });
+
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {
     expect(saveFileName(new Date(2026, 10, 14, 20, 5))).toBe('Draken en Dinges - 2026-11-14 20.05.txt');
   });

@@ -38,10 +38,13 @@ Bij **Start sessie** kies je wat jullie vandaag spelen:
 
 ### Hoe een seizoen werkt
 - Bovenaan staat het seizoen: de **Slechterik-meter** (0–6), jullie **voorsprong** (★) en de gevonden **aanwijzingen**.
-- Elk hoofdstuk toont *Vorige keer in Kakofonië…*, wat de slechterik nu van plan is, waar het gebeurt, wie er rondloopt
-  en **Jullie doel vandaag**. Speel vrij, met de Pruttelpot.
+- Elk hoofdstuk toont *Vorige keer in Kakofonië…*, waar het gebeurt, wie er rondloopt en **Jullie doel vandaag**.
+- Een hoofdstuk heeft **3 scènes**: **het begin** (een concrete situatie om voor te lezen, met een vraag aan jullie),
+  **de wending** (er gebeurt iets onverwachts) en **het beslissende moment**. Speel elke scène vrij, met de Pruttelpot.
+  - **Ideeën als jullie vastzitten**: 2–3 mogelijke aanpakken, verborgen tot je erop tikt.
+  - **Verder in het verhaal ▶** als jullie klaar zijn met een scène. *Wat er al gebeurde* blijft na te lezen.
 - **Voorsprong**: elke geslaagde worp tijdens het hoofdstuk geeft een ster (max. 2). Een goede avond telt dus mee.
-- **Naar het beslissende moment** (als jullie klaar zijn): de app vraagt eerlijk of het doel gehaald is (ja = extra ster).
+- **Start het beslissende moment** (in de 3e scène): de app vraagt eerlijk of het doel gehaald is (ja = extra ster).
   Dan rolt elke held één keer (4 of meer). Speel je met 1 of 2, dan rolt er een **bondgenoot** mee.
   Elke ster telt als een succes.
   - **Perfect** (alles gelukt): meter −1 én een aanwijzing.
