@@ -15,6 +15,13 @@ type Mode = 'setup' | 'enter' | 'rolling' | 'result';
 /** Het maatje van de held kan ook helpen (zoveel keer per sessie als zijn stadium). */
 const BUDDY = 'maatje';
 
+/** Actie in een scène: een gewone worp van wie aan de beurt is (helper, pech, frietjes, beurt door), maar mag ook als
+ *  die held al vrij gerold had; de uitkomst gaat naar `after` (bij het sluiten). */
+export interface ActionRoll {
+  title: string;
+  after: (success: boolean) => void;
+}
+
 /** Groepsworp (beslissend moment, finale): geen beurtslot, geen helper; het resultaat gaat naar `onResult`. */
 export interface GroupRoll {
   title: string;
@@ -33,6 +40,7 @@ interface DiceState {
   /** Hoe er gerold werd, zodat "opnieuw" op dezelfde manier gaat. */
   source: 'app' | 'echt';
   group: GroupRoll | null;
+  action: ActionRoll | null;
   /** Gekozen voorwerp uit de rugzak (index), of null. */
   itemSlot: number | null;
   itemSpent: boolean;
@@ -79,7 +87,7 @@ function render(app: App, s: DiceState): void {
 
   if (s.mode === 'setup') {
     body = `
-      <h2>${DICE_ICON} ${escapeHtml(s.group ? s.group.title : `${hero.name} probeert iets`)}</h2>
+      <h2>${DICE_ICON} ${s.action ? `${escapeHtml(hero.name)}: <span class="story-text">${escapeHtml(s.action.title)}</span>` : escapeHtml(s.group ? s.group.title : `${hero.name} probeert iets`)}</h2>
       <p class="q">Is ${escapeHtml(hero.name)} hier goed of slecht in?</p>
       <div class="segs">
         ${seg('edge', 'goed', '👍 Goed in', s.edge === 'goed', `<small>${escapeHtml(hero.goodAt.join(' · '))}</small>`)}
@@ -225,22 +233,23 @@ function appRoll(app: App, s: DiceState): void {
   render(app, s);
 }
 
-export function openDice(app: App, heroId: string, group: GroupRoll | null = null): void {
+export function openDice(app: App, heroId: string, group: GroupRoll | null = null, action: ActionRoll | null = null): void {
   const game = requireGame(app);
   const overlay = $('#overlay');
-  if (!group && !canRoll(game, heroId)) {
+  if (!group && !action && !canRoll(game, heroId)) {
     toast(`${findHero(game, heroId).name} heeft al gerold. Wacht tot ge terug aan de beurt zijt!`);
     return;
   }
   // Enkel wie aan de beurt is geeft na zijn worp de beurt door; een uitzonderlijke worp van iemand anders niet.
   const wasTurn = !group && currentHero(game)?.id === heroId;
-  const s: DiceState = { heroId, edge: 'gewoon', difficulty: 'gewoon', helperId: null, mode: 'setup', entered: [], shown: [], outcome: null, source: 'app', group, itemSlot: null, itemSpent: false, buddySpent: false, pech: null };
+  const s: DiceState = { heroId, edge: 'gewoon', difficulty: 'gewoon', helperId: null, mode: 'setup', entered: [], shown: [], outcome: null, source: 'app', group, action, itemSlot: null, itemSpent: false, buddySpent: false, pech: null };
 
   const close = (): void => {
     overlay.hidden = true;
     overlay.innerHTML = '';
     overlay.onclick = null;
     if (s.outcome !== null && group) group.onResult(s.outcome.success);
+    if (s.outcome !== null && action) action.after(s.outcome.success);
     if (s.outcome !== null && wasTurn) {
       nextTurn(game);
       const next = currentHero(game);

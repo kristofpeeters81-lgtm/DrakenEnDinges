@@ -2,10 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   advanceChapter,
   advanceScene,
+  actionFailed,
+  actionSucceeded,
+  canAct,
   keyDone,
   MAX_LEAD,
-  MOMENT_SCENE,
-  recordKey,
+  OWN_IDEA,
+  recordAction,
+  SCENE_TURNS,
+  sceneProgress,
+  turnsLeft,
   leadTotal,
   CHAPTERS,
   finaleHearts,
@@ -118,47 +124,73 @@ describe('beslissend moment', () => {
   });
 });
 
-describe('scènes en sleutelmomenten', () => {
-  it('begin → sleutelmoment → wending → sleutelmoment → beslissend moment', () => {
+describe('scènes met acties', () => {
+  const act = (s: ReturnType<typeof newSeason>, action: number, success: boolean) => recordAction(s, { hero: 'Anna', action, text: '', success });
+
+  it('2 gelukte acties = scène gelukt, daarna verder naar de wending', () => {
     const s = newSeason([], counts);
-    advanceScene(s);
-    expect(s.scene).toBe(0);
-    expect(recordKey(s, true)).toBe(true);
+    expect(act(s, 0, true)).toBeNull();
+    expect(sceneProgress(s)).toBe(1);
+    expect(act(s, 3, true)).toBe(true);
     expect(keyDone(s)).toBe(true);
     advanceScene(s);
     expect(s.scene).toBe(1);
-    expect(recordKey(s, false)).toBe(true);
-    advanceScene(s);
-    expect(s.scene).toBe(MOMENT_SCENE);
-    expect(s.keys).toEqual([true, false]);
-    expect(recordKey(s, true)).toBe(false);
+    expect(sceneProgress(s)).toBe(0);
+    expect(turnsLeft(s)).toBe(SCENE_TURNS);
   });
 
-  it('één sleutelmoment per scène', () => {
+  it('beurten op zonder 2 successen = scène mislukt', () => {
     const s = newSeason([], counts);
-    recordKey(s, false);
-    expect(recordKey(s, true)).toBe(false);
+    act(s, 0, false);
+    act(s, 1, true);
+    act(s, 2, false);
+    act(s, 0, false);
+    expect(act(s, 4, false)).toBe(false);
     expect(s.keys).toEqual([false]);
+    expect(canAct(s)).toBe(false);
   });
 
-  it('nieuw hoofdstuk begint weer bij de eerste scène, zonder sleutels', () => {
+  it('een mislukte actie mag opnieuw, een gelukte niet', () => {
     const s = newSeason([], counts);
-    recordKey(s, true);
+    act(s, 2, false);
+    expect(actionFailed(s, 2)).toBe(true);
+    expect(actionSucceeded(s, 2)).toBe(false);
+    act(s, 2, true);
+    expect(actionSucceeded(s, 2)).toBe(true);
+    expect(() => act(s, 2, true)).toThrow();
+  });
+
+  it('eigen ideeën mogen altijd, en de tekst wordt onthouden (ingekort)', () => {
+    const s = newSeason([], counts);
+    recordAction(s, { hero: 'Anna', action: OWN_IDEA, text: 'x'.repeat(200), success: true });
+    recordAction(s, { hero: 'Papa', action: OWN_IDEA, text: 'nog eens', success: false });
+    expect(s.log[0].text.length).toBe(120);
+    expect(s.log[1].hero).toBe('Papa');
+  });
+
+  it('nieuw hoofdstuk begint met een leeg logboek', () => {
+    const s = newSeason([], counts);
+    act(s, 0, true);
+    act(s, 1, true);
     advanceScene(s);
     resolveMoment(s, 3, 3);
     advanceChapter(s);
-    expect(s.scene).toBe(0);
+    expect(s.log).toEqual([]);
     expect(s.keys).toEqual([]);
   });
 
-  it('het beslissende moment zet de scène op het moment', () => {
+  it('geen acties na het beslissende moment of in de finale', () => {
     const s = newSeason([], counts);
     resolveMoment(s, 3, 3);
-    expect(s.scene).toBe(MOMENT_SCENE);
+    expect(canAct(s)).toBe(false);
+    s.chapter = CHAPTERS;
+    s.momentDone = false;
+    s.scene = 0;
+    expect(canAct(s)).toBe(false);
   });
 });
 
-describe('voorsprong uit sleutelmomenten', () => {
+describe('voorsprong uit gelukte scènes', () => {
   it('1 ster per gelukt sleutelmoment, +1 als ze allebei lukten', () => {
     const a = newSeason([], counts);
     a.keys = [true, false];
@@ -189,15 +221,6 @@ describe('voorsprong uit sleutelmomenten', () => {
     expect(resolveMoment(s, 1, 3)).toBe('mislukt');
   });
 
-  it('geen sleutelmomenten meer na het beslissende moment of in de finale', () => {
-    const s = newSeason([], counts);
-    resolveMoment(s, 3, 3);
-    expect(recordKey(s, true)).toBe(false);
-    s.chapter = CHAPTERS;
-    s.momentDone = false;
-    s.scene = 0;
-    expect(recordKey(s, true)).toBe(false);
-  });
 });
 
 describe('finale', () => {

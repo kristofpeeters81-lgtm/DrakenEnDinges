@@ -61,16 +61,18 @@ Bij **Start sessie** kies je wat jullie vandaag spelen:
 - Bovenaan staat het seizoen: de **Slechterik-meter** (0–6), jullie **voorsprong** (★) en de gevonden **aanwijzingen**.
 - Elk hoofdstuk toont *Vorige keer in Kakofonië…*, waar het gebeurt, wie er rondloopt en **Jullie doel vandaag**.
 - Een hoofdstuk heeft **3 scènes**: **het begin**, **de wending** en **het beslissende moment**.
-  - Lees de scène voor en speel ze vrij: vertel wat jullie doen, rol voor spannende dingen, vraag de Pruttelpot.
-    **Ideeën als jullie vastzitten** toont 2–3 hints.
-  - Klaar met de scène? **Naar het sleutelmoment ▶**: de app toont wat er op het spel staat en 2–3 **aanpakken**.
-    Kies een aanpak en wie het probeert. Die held rolt (kies "goed in" als de aanpak bij hem past; een frietje
-    voor een herkansing mag).
-  - Het **gevolg** hangt af van de worp, en **de volgende scène ook**: na een gelukt sleutelmoment volgt een andere
-    wending (en een ander beslissend moment) dan na een mislukt. Het verhaal gaat altijd verder.
-  - **Verder in het verhaal ▶** pas na het sleutelmoment. *Wat er al gebeurde* (met de gevolgen) blijft na te lezen.
-- **Voorsprong** ★: elk gelukt sleutelmoment = 1 ster, allebei gelukt = een bonusster (max. 3).
-  Vrije worpen tijdens het spelen geven geen sterren (wel spanning, frietjes en pech).
+  - Lees de scène voor. Daaronder staat het **doel van de scène**, de **voortgang** (●○, 2 gelukte acties nodig)
+    en de **beurten** die er nog over zijn (5).
+  - Wie aan de beurt is, tikt op **Wat doet …?** en kiest een **actie** uit de lijst (8–10, met bij welk talent
+    ze past), of **Iets anders…**: typ wat je doet, de **Pruttelpot** zegt of het kan, en zo ja rol je.
+  - De held rolt (kies "goed in" als de actie bij hem past; iemand mag helpen; een frietje voor een herkansing mag).
+    De app toont het **gevolg van die actie** en zet alles in het **verhaallogboek** — ook jullie eigen ideeën.
+    Daarna is de volgende aan de beurt. Een mislukte actie mag later opnieuw, een gelukte niet.
+  - **2 gelukt** = scène gelukt. **Beurten op** = scène mislukt. Het verhaal gaat altijd verder, maar met een
+    **andere versie** van de volgende scène (en van het beslissende moment).
+  - **Verder in het verhaal ▶** zodra de scène afgelopen is. *Wat er al gebeurde* (met logboek) blijft na te lezen.
+- **Voorsprong** ★: elke gelukte scène = 1 ster, allebei gelukt = een bonusster (max. 3).
+  Vrije worpen buiten de acties geven geen sterren (wel spanning, frietjes en pech).
 - **Start het beslissende moment** (de 3e scène): elke held rolt één keer (4 of meer). Speel je met 1 of 2,
   dan rolt er een **bondgenoot** mee. Elke ster telt als een succes, dus een goede avond loopt niet meer mis
   door pech op het einde.

@@ -43,7 +43,7 @@ describe('verborgen inhoud', () => {
     for (let v = 0; v < c.villains; v++) {
       const season = {
         villain: v, places: [0, 1, 2, 3], figures: [0, 1, 2], chapter: 0, meter: 0, clues: 0, results: [],
-        momentDone: false, scene: 0, rewardTaken: false, keys: [] as boolean[], hearts: null, heartsStart: null, finished: false,
+        momentDone: false, scene: 0, rewardTaken: false, keys: [] as boolean[], log: [], hearts: null, heartsStart: null, finished: false,
       };
       for (let ch = 0; ch < CHAPTERS; ch++) {
         season.chapter = ch;
@@ -52,11 +52,11 @@ describe('verborgen inhoud', () => {
           season.keys = keys;
           const view = chapterView(season);
           const sceneTexts = view.scenes.reduce<string[]>(
-            (acc, s) => acc.concat([s.tekst, s.sleutel.vraag, s.sleutel.gelukt, s.sleutel.mislukt], s.ideeen, s.sleutel.aanpakken.map((x) => x.label)),
+            (acc, s) => acc.concat([s.tekst, s.doel, s.gelukt, s.mislukt], s.acties.reduce<string[]>((a2, x) => a2.concat([x.label, x.past, x.gelukt, x.mislukt]), [])),
             [],
           );
           const texts = [view.titel, view.doel, view.moment ?? '', ...sceneTexts];
-          if (view.scenes.length !== MOMENT_SCENE || view.moment === null || view.scenes.some((s) => s.ideeen.length < 2 || s.sleutel.aanpakken.length < 2)) problems++;
+          if (view.scenes.length !== MOMENT_SCENE || view.moment === null || view.scenes.some((s) => s.acties.length < 8)) problems++;
           problems += texts.filter((t) => /\{\w+\}/.test(t)).length;
         }
       }

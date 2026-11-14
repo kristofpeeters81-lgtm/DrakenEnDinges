@@ -1,12 +1,13 @@
 // Controleert een (leesbaar) seizoensbestand op vorm en plaatshouders, ZONDER inhoud te tonen.
 // Gebruik: node scripts/check-seasons.mjs <seizoenen.json>
-// Toont enkel aantallen en plaatsen van problemen (bv. "slechteriken[1].stappen[0].wending.gelukt.ideeen: te weinig").
+// Toont enkel aantallen en plaatsen van problemen (bv. "slechteriken[1].stappen[0].wending.gelukt.acties[3].mislukt: te kort").
 //
-// Vorm per hoofdstuk (vertakkingen):
-//   begin            = scène { tekst, ideeen, sleutel }
-//   wending.gelukt   = scène als sleutelmoment 1 gelukt is;  wending.mislukt = als het mislukt is
-//   moment.gelukt    = climax als sleutelmoment 2 gelukt is; moment.mislukt  = als het mislukt is
-//   sleutel          = { vraag, aanpakken: [{ label, past }], gelukt, mislukt }  (gevolgteksten)
+// Vorm per hoofdstuk (vertakkingen + acties):
+//   begin            = scène
+//   wending.gelukt   = scène als het begin gelukt is;   wending.mislukt = als het mislukt is
+//   moment.gelukt    = climax als de wending gelukt is; moment.mislukt  = als ze mislukt is
+//   scène            = { tekst, doel, acties: [8–10 × { label, past, gelukt, mislukt }], gelukt, mislukt }
+//                      (scène.gelukt/mislukt = afloop als de voortgang vol is / de beurten op zijn)
 
 import fs from 'node:fs';
 
@@ -28,22 +29,24 @@ const list = (v, where, min, maxEach, max = 99) => {
   if (!Array.isArray(v) || v.length < min || v.length > max) problems.push(`${where}: ${min}–${max} nodig`);
   else v.forEach((s, i) => str(s, `${where}[${i}]`, 1, maxEach));
 };
-const key = (k, where) => {
-  if (!k || typeof k !== 'object') return problems.push(`${where}: ontbreekt`);
-  str(k.vraag, `${where}.vraag`, 15, 200);
-  if (!Array.isArray(k.aanpakken) || k.aanpakken.length < 2 || k.aanpakken.length > 3) problems.push(`${where}.aanpakken: 2–3 nodig`);
-  (k.aanpakken ?? []).forEach((a, i) => {
-    str(a?.label, `${where}.aanpakken[${i}].label`, 3, 70);
-    str(a?.past, `${where}.aanpakken[${i}].past`, 3, 80);
-  });
-  str(k.gelukt, `${where}.gelukt`, 60, 450);
-  str(k.mislukt, `${where}.mislukt`, 60, 450);
-};
 const scene = (sc, where) => {
   if (!sc || typeof sc !== 'object') return problems.push(`${where}: ontbreekt`);
+  if ('sleutel' in sc || 'ideeen' in sc) problems.push(`${where}: oude vorm (sleutel/ideeen) — gebruik doel/acties`);
   str(sc.tekst, `${where}.tekst`, 200, 750);
-  list(sc.ideeen, `${where}.ideeen`, 2, 160, 3);
-  key(sc.sleutel, `${where}.sleutel`);
+  str(sc.doel, `${where}.doel`, 15, 160);
+  if (!Array.isArray(sc.acties) || sc.acties.length < 8 || sc.acties.length > 10) problems.push(`${where}.acties: 8–10 nodig`);
+  const labels = new Set();
+  (sc.acties ?? []).forEach((a, i) => {
+    const wa = `${where}.acties[${i}]`;
+    str(a?.label, `${wa}.label`, 3, 70);
+    str(a?.past, `${wa}.past`, 3, 60);
+    str(a?.gelukt, `${wa}.gelukt`, 40, 300);
+    str(a?.mislukt, `${wa}.mislukt`, 40, 300);
+    if (labels.has(a?.label)) problems.push(`${wa}.label: dubbel`);
+    labels.add(a?.label);
+  });
+  str(sc.gelukt, `${where}.gelukt`, 60, 450);
+  str(sc.mislukt, `${where}.mislukt`, 60, 450);
 };
 
 const data = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -62,7 +65,6 @@ if (!Array.isArray(data.slechteriken) || data.slechteriken.length < 3) problems.
     const ws = `${w}.stappen[${j}]`;
     str(s.titel, `${ws}.titel`, 3, 60);
     str(s.doel, `${ws}.doel`, 20, 250);
-    if ('scenes' in s || typeof s.moment === 'string') problems.push(`${ws}: oude vorm (scenes/moment-tekst) — gebruik begin/wending/moment`);
     scene(s.begin, `${ws}.begin`);
     scene(s.wending?.gelukt, `${ws}.wending.gelukt`);
     scene(s.wending?.mislukt, `${ws}.wending.mislukt`);

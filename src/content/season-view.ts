@@ -59,20 +59,19 @@ export interface ChapterView {
 
 export interface SceneView {
   tekst: string;
-  ideeen: string[];
-  sleutel: { vraag: string; aanpakken: Array<{ label: string; past: string }>; gelukt: string; mislukt: string };
+  doel: string;
+  acties: Array<{ label: string; past: string; gelukt: string; mislukt: string }>;
+  gelukt: string;
+  mislukt: string;
 }
 
 function sceneView(sc: Scene, vv: Record<string, string>): SceneView {
   return {
     tekst: fill(sc.tekst, vv),
-    ideeen: sc.ideeen.map((i) => fill(i, vv)),
-    sleutel: {
-      vraag: fill(sc.sleutel.vraag, vv),
-      aanpakken: sc.sleutel.aanpakken.map((a) => ({ label: fill(a.label, vv), past: fill(a.past, vv) })),
-      gelukt: fill(sc.sleutel.gelukt, vv),
-      mislukt: fill(sc.sleutel.mislukt, vv),
-    },
+    doel: fill(sc.doel, vv),
+    acties: sc.acties.map((a) => ({ label: fill(a.label, vv), past: fill(a.past, vv), gelukt: fill(a.gelukt, vv), mislukt: fill(a.mislukt, vv) })),
+    gelukt: fill(sc.gelukt, vv),
+    mislukt: fill(sc.mislukt, vv),
   };
 }
 

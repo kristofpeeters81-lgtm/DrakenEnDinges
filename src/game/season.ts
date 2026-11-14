@@ -3,9 +3,11 @@
 //
 // Elk hoofdstuk eindigt met een beslissend moment: elke held rolt 1×, de groep heeft een aantal successen nodig.
 //   alles gelukt → meter −1 + aanwijzing · genoeg gelukt → aanwijzing · mislukt → meter +2
-// Sleutelmomenten: elke scène (begin, wending) eindigt met een sleutelmoment (aanpak kiezen + 1 worp). De uitkomst
-// bepaalt welke versie van de volgende scène volgt (vertakking) en geeft voorsprong: 1 ster per gelukt sleutelmoment,
-// +1 als ze allebei lukten. Elke ster telt als een succes bij het beslissende moment. Vrije worpen geven geen sterren.
+// Acties: in elke scène (begin, wending) kiest wie aan de beurt is een actie uit de lijst (of "iets anders", via de
+// Pruttelpot) en rolt. Elke gelukte actie vult de voortgang; SCENE_GOAL gelukt binnen SCENE_TURNS beurten = scène
+// gelukt, beurten op = scène mislukt. Die uitkomst bepaalt welke versie van het verhaal volgt (vertakking) en geeft
+// voorsprong: 1 ster per gelukte scène, +1 als ze allebei lukten. Elke ster telt als een succes bij het beslissende
+// moment. Een mislukte actie mag opnieuw, een gelukte niet. Alles komt in het logboek van het hoofdstuk.
 // Finale: de slechterik heeft levens (meer bij een hoge meter, minder per aanwijzing). Rondes tot hij verslagen is:
 // altijd winbaar, een hoge meter maakt het enkel langer en spannender.
 
@@ -15,8 +17,23 @@ export const SCENES = 3;
 export const MOMENT_SCENE = SCENES - 1;
 export const METER_MAX = 6;
 export const MOMENT_TARGET = 4;
-/** Sleutelmomenten per hoofdstuk (na het begin en na de wending). */
+/** Scènes met acties per hoofdstuk (het begin en de wending); hun uitkomst bepaalt de vertakking. */
 export const KEY_MOMENTS = MOMENT_SCENE;
+export const SCENE_GOAL = 2;
+export const SCENE_TURNS = 5;
+/** Actie-nummer voor een eigen idee ("iets anders"). */
+export const OWN_IDEA = -1;
+
+/** Eén regel in het verhaallogboek van een hoofdstuk. */
+export interface LogEntry {
+  scene: number;
+  hero: string;
+  /** Nummer van de actie in de lijst, of OWN_IDEA. */
+  action: number;
+  /** Wat de spelers zelf intypten bij een eigen idee (anders leeg). */
+  text: string;
+  success: boolean;
+}
 export const MAX_LEAD = KEY_MOMENTS + 1;
 /** Plaatsen per seizoen: één per hoofdstuk + één voor de finale. */
 export const PLACES_PER_SEASON = CHAPTERS + 1;
@@ -40,8 +57,10 @@ export interface Season {
   rewardTaken: boolean;
   /** Huidige scène in het hoofdstuk (0 = begin, 1 = wending, 2 = beslissend moment). */
   scene: number;
-  /** Uitkomst van de sleutelmomenten in dit hoofdstuk (true = gelukt), in volgorde. Bepaalt de vertakking. */
+  /** Uitkomst van de scènes met acties in dit hoofdstuk (true = gelukt), in volgorde. Bepaalt de vertakking. */
   keys: boolean[];
+  /** Verhaallogboek van dit hoofdstuk: elke gekozen actie met wie en hoe het afliep. */
+  log: LogEntry[];
   /** Finale: resterende levens van de slechterik (null = finale nog niet begonnen). */
   hearts: number | null;
   /** Levens bij de start van de finale (voor de weergave). */
@@ -83,6 +102,7 @@ export function newSeason(usedVillains: readonly number[], counts: ContentCounts
     scene: 0,
     rewardTaken: false,
     keys: [],
+    log: [],
     hearts: null,
     heartsStart: null,
     finished: false,
@@ -107,16 +127,45 @@ export function neededSuccesses(rollers: number, meter: number): number {
   return Math.min(rollers, Math.ceil(rollers / 2) + (meter >= 3 ? 1 : 0));
 }
 
-/** Is het sleutelmoment van de huidige scène al gespeeld? */
+/** Heeft de huidige scène al een uitkomst (voortgang vol of beurten op)? */
 export function keyDone(season: Season): boolean {
   return season.keys.length > season.scene;
 }
 
-/** Uitkomst van het sleutelmoment van de huidige scène. Geeft false als er nu geen sleutelmoment te spelen is. */
-export function recordKey(season: Season, success: boolean): boolean {
-  if (isFinale(season) || season.momentDone || season.scene >= MOMENT_SCENE || keyDone(season)) return false;
-  season.keys.push(success);
-  return true;
+function sceneLog(season: Season): LogEntry[] {
+  return season.log.filter((e) => e.scene === season.scene);
+}
+
+export function sceneProgress(season: Season): number {
+  return sceneLog(season).filter((e) => e.success).length;
+}
+
+export function turnsLeft(season: Season): number {
+  return Math.max(0, SCENE_TURNS - sceneLog(season).length);
+}
+
+/** Is deze actie in de huidige scène al gelukt? (dan kan ze niet nog eens) */
+export function actionSucceeded(season: Season, action: number): boolean {
+  return action !== OWN_IDEA && sceneLog(season).some((e) => e.action === action && e.success);
+}
+
+/** Is deze actie in de huidige scène al eens mislukt? (dan mag ze opnieuw) */
+export function actionFailed(season: Season, action: number): boolean {
+  return action !== OWN_IDEA && sceneLog(season).some((e) => e.action === action && !e.success);
+}
+
+export function canAct(season: Season): boolean {
+  return !isFinale(season) && !season.momentDone && season.scene < MOMENT_SCENE && !keyDone(season);
+}
+
+/** Een actie is afgerond. Geeft de uitkomst van de scène terug als die nu vaststaat (true/false), anders null. */
+export function recordAction(season: Season, entry: Omit<LogEntry, 'scene'>): boolean | null {
+  if (!canAct(season)) throw new Error('Er kan nu geen actie gespeeld worden');
+  if (actionSucceeded(season, entry.action)) throw new Error('Deze actie is al gelukt');
+  season.log.push({ ...entry, text: entry.text.slice(0, 120), scene: season.scene });
+  if (sceneProgress(season) >= SCENE_GOAL) season.keys.push(true);
+  else if (turnsLeft(season) === 0) season.keys.push(false);
+  return keyDone(season) ? season.keys[season.scene] : null;
 }
 
 /** Verder in het verhaal: naar de volgende scène, pas als het sleutelmoment van deze scène gespeeld is. */
@@ -154,6 +203,7 @@ export function advanceChapter(season: Season): void {
   season.scene = 0;
   season.rewardTaken = false;
   season.keys = [];
+  season.log = [];
 }
 
 /** Levens in de finale. Sterkere helden (gemiddeld niveau 4, 7, 10) = de slechterik schaalt mee. */

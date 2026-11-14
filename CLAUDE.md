@@ -18,8 +18,8 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
   `node scripts/encode-content.mjs <json> <naam>` → `src/content/<naam>.data.ts` (base64) → leesbare JSON verwijderen.
   Nooit `*.data.ts` decoderen, tonen of in screenshots vastleggen; tests controleren enkel vorm en aantallen.
   Toegang in code via `src/content/index.ts` (beginscènes, Eidastinkt) en `src/content/season-view.ts` (seizoenen).
-  Vorm van de seizoensinhoud: `src/content/season-content.ts` (vertakt: begin → sleutelmoment → wending gelukt/mislukt →
-  sleutelmoment → moment gelukt/mislukt); vorm controleren zonder inhoud te tonen: `node scripts/check-seasons.mjs <json>`.
+  Vorm van de seizoensinhoud: `src/content/season-content.ts` (vertakt: begin → wending gelukt/mislukt → moment
+  gelukt/mislukt; elke scène heeft een doel, 8–10 acties met eigen gevolgen en een afloop gelukt/mislukt); vorm controleren zonder inhoud te tonen: `node scripts/check-seasons.mjs <json>`.
   **Verhaalinhoud altijd laten nalezen door een sub-agent die ze niet schreef** (samenhang over alle paden, plotgaten),
   dan verbeteren en opnieuw nalezen; bevindingen enkel in geheime bestanden, aan de hoofdsessie enkel aantallen. `seizoenen.data.ts` bevat het **echte verhaal** (3 slechteriken);
   testinhoud (`test: true`, toont TESTVERHAAL) kan voor ontwikkeling tijdelijk in dezelfde vorm, maar nooit committen.

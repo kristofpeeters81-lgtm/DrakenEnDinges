@@ -4,7 +4,7 @@
 import { isListedPower } from '../data/ideas';
 import { emptyStats, type GuestTemplate, type HeroStats } from '../data/growth-data';
 import { applyCard, checkTitles, grantLevelUp, groupLevel, itemUses, titleName, type Buddy, type CardChoice, type CardKind } from './growth';
-import { advanceChapter, advanceScene, recordKey, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
+import { advanceChapter, advanceScene, recordAction, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
 
 export const MAX_HEROES = 6;
 export const START_FRIES = 3;
@@ -282,11 +282,11 @@ function requireSeason(game: Game): Season {
 }
 
 /** Een geslaagde gewone worp in een seizoenssessie. Geeft true terug als dat een voorsprong-ster opleverde. */
-/** Uitkomst van het sleutelmoment van de huidige scène (bepaalt de vertakking en de voorsprong). */
-export function recordKeyResult(game: Game, success: boolean): boolean {
-  const ok = recordKey(requireSeason(game), success);
-  if (ok) touch(game);
-  return ok;
+/** Een actie in de huidige scène is afgerond. Geeft de uitkomst van de scène terug als die nu vaststaat. */
+export function recordSceneAction(game: Game, hero: string, action: number, text: string, success: boolean): boolean | null {
+  const outcome = recordAction(requireSeason(game), { hero, action, text, success });
+  touch(game);
+  return outcome;
 }
 
 export function nextScene(game: Game): void {

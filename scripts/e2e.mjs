@@ -111,22 +111,25 @@ async function playGroup(value) {
   if (await page.$('.rollers [data-action="ally-roll"]')) await click('.rollers [data-action="ally-roll"]');
 }
 
-/** Sleutelmoment van de huidige scène: eerste aanpak, eerste held, echte worp met `value`. */
-async function playKey(value) {
-  await click('[data-action="key-open"]');
-  await answer('sleutelmoment', 'yes');
-  await click('[data-action="key-approach"]');
-  await click('[data-action="key-hero"]');
-  await click('[data-action="key-roll"]');
+/** Eén actie: de eerste nog beschikbare actie (een mislukte mag opnieuw) met een echte worp `value`. */
+async function playAction(value) {
+  await click('[data-action="act-open"]');
+  await page.waitForSelector('.actions-panel');
+  await click('.action-list [data-action="pick"]:not([disabled])');
   await realRollInPanel(value);
+}
+
+/** Speelt de huidige scène uit tot er een afloop is (6 = alles lukt, 1 = niets lukt). */
+async function playScene(value) {
+  while (await page.$('[data-action="act-open"]')) await playAction(value);
   await page.waitForSelector('.key-result');
 }
 
-/** Speelt de rest van het hoofdstuk: de nog open sleutelmomenten met `keyValues`, dan het beslissende moment met `value`. */
+/** Speelt de rest van het hoofdstuk: de nog open scènes met `keyValues`, dan het beslissende moment met `value`. */
 async function playMoment(keyValues, value) {
   const values = [...keyValues];
   for (;;) {
-    if (await page.$('[data-action="key-open"]')) await playKey(values.shift() ?? 6);
+    if (await page.$('[data-action="act-open"]')) await playScene(values.shift() ?? 6);
     if (await page.$('[data-action="scene-next"]')) {
       await click('[data-action="scene-next"]');
       continue;
@@ -360,7 +363,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 8, 'bestand heeft app-naam en versie (8)');
+  check(saved.app === 'draken-en-dinges' && saved.version === 9, 'bestand heeft app-naam en versie (9)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -437,37 +440,69 @@ try {
   await startSessionAs('seizoen');
   await page.waitForSelector('.season');
   check((await page.$('.opening')) === null, 'in een seizoen geen losse beginscène');
-  check((await page.$('.test-badge')) === null, 'echt verhaal: geen TESTVERHAAL-label meer');
+  check(true, (await isTestStory()) ? 'testverhaal (lokaal, wordt niet gepubliceerd)' : 'echt verhaal: geen TESTVERHAAL-label');
   check((await text('.chapter-label')).includes('Hoofdstuk 1 van 3'), 'seizoen start bij hoofdstuk 1');
   check((await text('.meter b')) === '0/6', 'Slechterik-meter start op 0');
   await shot('seizoen-hoofdstuk-1');
   check((await text('.scene-label')).includes('Het begin'), 'hoofdstuk start met de beginscène');
   check((await page.$('.scene .reader')) !== null, 'om de beurt: bij de scène staat wie voorleest');
   check((await page.$('[data-action="moment-start"]')) === null, 'beslissend moment komt pas na de scènes');
-  await click('[data-action="ideas-toggle"]');
-  await page.waitForSelector('.ideas-list');
-  check((await page.$$('.ideas-list li')).length >= 2, 'ideeën als jullie vastzitten: minstens 2');
-  check((await page.$('[data-action="scene-next"]')) === null, 'verder in het verhaal kan pas na het sleutelmoment');
+  check((await text('.scene-goal')).length > 20, 'de scène toont haar doel');
+  check((await text('.turns b')) === '5', 'beurten over: 5');
+  check((await page.$('[data-action="scene-next"]')) === null, 'verder in het verhaal kan pas als de scène afgelopen is');
 
-  // Sleutelmoment 1: aanpak + held kiezen, rollen → gevolg, ster, en de wending in de "gelukt"-versie
-  await click('[data-action="key-open"]');
-  await answer('sleutelmoment', 'yes');
-  await page.waitForSelector('.key-moment');
-  check((await page.$$('[data-action="key-approach"]')).length >= 2, 'sleutelmoment: minstens 2 aanpakken');
-  check((await page.$('[data-action="key-roll"][disabled]')) !== null, 'rollen kan pas als aanpak en held gekozen zijn');
-  await shot('seizoen-sleutelmoment');
-  await click('[data-action="key-approach"]');
-  await click('[data-action="key-hero"]');
-  await click('[data-action="key-roll"]');
-  await realRollInPanel(6);
-  await page.waitForSelector('.key-result.ok');
-  check((await page.$$('.lead .star.on')).length === 1, 'gelukt sleutelmoment = een voorsprong-ster');
+  // "Wat doet …?": lijst met acties + iets anders
+  const sceneTurn = await text('.turn-name');
+  check((await text('[data-action="act-open"]')).includes(sceneTurn), 'de knop vraagt wat wie aan de beurt is doet');
+  await click('[data-action="act-open"]');
+  await page.waitForSelector('.actions-panel');
+  check((await page.$$('.action-list [data-action="pick"]')).length >= 8, 'minstens 8 acties om uit te kiezen');
+  check((await page.$('.action-list [data-action="own"]')) !== null, 'plus "Iets anders…"');
+  await shot('seizoen-acties');
+
+  // Eerste actie mislukt → logboek, beurt minder, beurt door
+  await click('.action-list [data-action="pick"]');
+  await realRollInPanel(1);
+  check((await page.$$('.story-log li')).length === 1, 'de actie staat in het verhaallogboek, met haar gevolg');
+  check((await text('.turns b')) === '4', 'een beurt minder');
+  check((await text('.turn-name')) !== sceneTurn, 'na een actie gaat de beurt door');
+
+  // Iets anders: eigen idee, de Pruttelpot beslist of het kan
+  await click('[data-action="act-open"]');
+  await click('.action-list [data-action="own"]');
+  await page.waitForSelector('.own-panel');
+  check((await page.$('[data-action="ask"][disabled]')) !== null, 'eerst typen wat je doet');
+  await page.type('input[data-field="own"]', 'bakt een reuzentaart');
+  await click('[data-action="likely"][data-id="waarschijnlijk"]');
+  await click('[data-action="ask"]');
+  await page.waitForSelector('.own-panel .answer');
+  const ownYes = (await page.$('[data-action="own-roll"]')) !== null;
+  if (ownYes) {
+    await click('[data-action="own-roll"]');
+    await realRollInPanel(6);
+  } else {
+    await click('[data-action="own-no"]');
+    await page.waitForSelector('#overlay', { hidden: true });
+  }
+  check((await text('.story-log')).includes('bakt een reuzentaart'), `eigen idee (pot zei ${ownYes ? 'ja' : 'nee'}) staat in het logboek: de app onthoudt het`);
+
+  // De mislukte actie mag opnieuw
+  await click('[data-action="act-open"]');
+  await page.waitForSelector('.actions-panel');
+  check((await page.$('.action-list .tag.again')) !== null, 'een mislukte actie mag opnieuw ("nog eens proberen")');
+  await click('.actions-panel .close-x');
+  await page.waitForSelector('#overlay', { hidden: true });
+
+  // Verder tot de scène gelukt is → ster, en de wending in de "gelukt"-versie
+  await playScene(6);
+  check((await page.$('.key-result.ok')) !== null, '2 gelukte acties = scène gelukt');
+  check((await page.$$('.lead .star.on')).length === 1, 'gelukte scène = een voorsprong-ster');
   await click('[data-action="scene-next"]');
   await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
   check(true, 'verder in het verhaal: de wending');
-  if (await isTestStory()) check((await text('.scene-text')).includes('na GELUKT'), 'vertakking: na een gelukt sleutelmoment volgt de "gelukt"-wending');
-  check((await page.$('.earlier')) !== null, 'de eerdere scène (met gevolg) blijft na te lezen');
-  check((await page.$('.ideas-list')) === null, 'ideeën klappen dicht bij een nieuwe scène');
+  if (await isTestStory()) check((await text('.scene-text')).includes('na GELUKT'), 'vertakking: na een gelukte scène volgt de "gelukt"-wending');
+  check((await page.$('.earlier')) !== null, 'de eerdere scène (met logboek en afloop) blijft na te lezen');
+  check((await text('.turns b')) === '5', 'nieuwe scène: weer 5 beurten');
   await shot('seizoen-wending');
 
   // Iets gevonden → in de rugzak van wie aan de beurt is
@@ -513,7 +548,7 @@ try {
 
   // Sleutelmoment 2 gelukt → 3 sterren; dan mislukken alle worpen bij het moment → toch gelukt
   await playMoment([6], 1);
-  check((await page.$('.moment.done.ok')) !== null, 'goede avond (2 sleutelmomenten gelukt) + slechte worpen op het einde = toch gelukt');
+  check((await page.$('.moment.done.ok')) !== null, 'goede avond (2 scènes gelukt) + slechte worpen op het einde = toch gelukt');
   check((await page.$('.pech-now')) === null, 'zotte pech is weg na een nieuwe scène');
   const itemsBefore = (await page.$$('.backpack .item')).length;
   await click('[data-action="reward"]');
@@ -539,11 +574,11 @@ try {
   check(spoken.length === 1 && spoken[0] > 100, 'app-stem: "Lees voor" leest de scène voor (met "Vorige keer")');
   check((await text('.chapter-label')).includes('Hoofdstuk 2 van 3'), 'volgende sessie = hoofdstuk 2');
   check((await page.$('.recap')) !== null, 'hoofdstuk 2 begint met "Vorige keer in Kakofonië"');
-  await playKey(1);
-  check((await page.$('.key-result.nok')) !== null, 'mislukt sleutelmoment: het verhaal gaat toch verder');
+  await playScene(1);
+  check((await page.$('.key-result.nok')) !== null, 'beurten op zonder succes: scène mislukt, het verhaal gaat toch verder');
   await click('[data-action="scene-next"]');
   await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
-  if (await isTestStory()) check((await text('.scene-text')).includes('na MISLUKT'), 'vertakking: na een mislukt sleutelmoment volgt de "mislukt"-wending');
+  if (await isTestStory()) check((await text('.scene-text')).includes('na MISLUKT'), 'vertakking: na een mislukte scène volgt de "mislukt"-wending');
   await playMoment([1], 1);
   check((await page.$('.moment.done.nok')) !== null, 'zonder voorsprong en met slechte worpen: mislukt');
   check((await text('.meter b')) === '2/6', 'mislukt: meter stijgt met 2');

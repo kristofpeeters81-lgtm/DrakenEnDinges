@@ -156,6 +156,22 @@ describe('spelbestand', () => {
     expect(loaded.season && 'leadRolls' in loaded.season).toBe(false);
   });
 
+  it('bewaart het verhaallogboek van een hoofdstuk', () => {
+    const g = sampleGame();
+    beginSeasonSession(g, { villains: 3, places: 6, figures: 4 });
+    if (g.season) g.season.log = [{ scene: 0, hero: 'Gerard', action: -1, text: 'We bakken een taart', success: true }];
+    expect(parseGame(serializeGame(g)).season?.log).toEqual(g.season?.log);
+  });
+
+  it('een seizoen uit versie 8 krijgt een leeg logboek', () => {
+    const g = sampleGame();
+    beginSeasonSession(g, { villains: 3, places: 6, figures: 4 });
+    const raw = JSON.parse(serializeGame(g)) as { version: number; game: { season: Record<string, unknown> } };
+    raw.version = 8;
+    delete raw.game.season.log;
+    expect(parseGame(JSON.stringify(raw)).season?.log).toEqual([]);
+  });
+
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {
     expect(saveFileName(new Date(2026, 10, 14, 20, 5))).toBe('Draken en Dinges - 2026-11-14 20.05.txt');
   });

@@ -21,6 +21,12 @@ import {
   isFinale,
   KEY_MOMENTS,
   keyDone,
+  OWN_IDEA,
+  SCENE_GOAL,
+  SCENE_TURNS,
+  sceneProgress,
+  turnsLeft,
+  type LogEntry,
   leadTotal,
   METER_MAX,
   MOMENT_SCENE,
@@ -30,7 +36,8 @@ import {
   SCENES,
   type Season,
 } from '../game/season';
-import { findHero, nextScene, presentHeroes, recordFinaleRound, recordKeyResult, recordMoment, takeReward, type Game } from '../game/state';
+import { currentHero, findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, takeReward, type Game } from '../game/state';
+import { openActions } from './actions';
 import { openFind } from './tasks';
 import { readBar, readerOf } from '../ui/readaloud';
 import { confirmDialog } from '../ui/dialog';
@@ -50,28 +57,14 @@ interface Aftermath {
   kind: 'moment' | 'finale-round' | 'won';
 }
 
-/** Keuzes in het sleutelmoment van de huidige scène. */
-interface KeyChoice {
-  key: string;
-  approach: number | null;
-  heroId: string | null;
-}
-
 const SCENE_NAMES = ['Het begin', 'De wending', 'Het beslissende moment'];
 
 let round: GroupRound | null = null;
-/** Ideeën opengeklapt voor deze scène (sleutel = hoofdstuk + scène). */
-let ideasOpenFor = '';
-let keyChoice: KeyChoice | null = null;
 let aftermath: Aftermath | null = null;
 let finaleRounds = 0;
 
 function keyOf(game: Game, season: Season): string {
   return `${game.id}|${season.villain}|${season.chapter}|${game.session}`;
-}
-
-function sceneKey(game: Game, season: Season): string {
-  return `${keyOf(game, season)}|${season.scene}`;
 }
 
 function currentRound(game: Game, season: Season): GroupRound | null {
@@ -80,10 +73,6 @@ function currentRound(game: Game, season: Season): GroupRound | null {
 
 function currentAftermath(game: Game, season: Season): Aftermath | null {
   return aftermath && aftermath.key === keyOf(game, season) ? aftermath : null;
-}
-
-function currentChoice(game: Game, season: Season): KeyChoice | null {
-  return keyChoice && keyChoice.key === sceneKey(game, season) ? keyChoice : null;
 }
 
 function meter(season: Season): string {
@@ -105,7 +94,7 @@ function lead(season: Season): string {
   let out = '';
   for (let i = 0; i < KEY_MOMENTS; i++) out += `<span class="star ${season.keys[i] === true ? 'on' : ''}">★</span>`;
   const bonus = season.keys.length === KEY_MOMENTS && season.keys.every(Boolean);
-  return `<div class="lead" title="1 ster per gelukt sleutelmoment, +1 als ze allemaal lukken">Voorsprong ${out}<span class="star bonus ${bonus ? 'on' : ''}">★</span></div>`;
+  return `<div class="lead" title="1 ster per gelukte scène, +1 als ze allebei lukken">Voorsprong ${out}<span class="star bonus ${bonus ? 'on' : ''}">★</span></div>`;
 }
 
 function hearts(season: Season): string {
@@ -142,46 +131,47 @@ function successes(game: Game, r: GroupRound): { done: boolean; count: number } 
   return { done: all, count };
 }
 
-/** Het sleutelmoment van een scène: nog te spelen (vraag, aanpakken, wie) of gespeeld (gevolg). */
-function keyBlock(game: Game, season: Season, sc: SceneView): string {
+/** Logboekregels van één scène, met het gevolg van elke actie. */
+function logList(entries: LogEntry[], sc: SceneView): string {
+  if (entries.length === 0) return '';
+  return `<ol class="story-log">${entries
+    .map((e) => {
+      const a = e.action === OWN_IDEA ? null : sc.acties[e.action];
+      const what = a ? `<span class="story-text">${escapeHtml(a.label)}</span>` : `eigen idee: <i>“${escapeHtml(e.text)}”</i>`;
+      const result = a ? (e.success ? a.gelukt : a.mislukt) : e.success ? 'Het lukt!' : 'Het lukt niet…';
+      return `<li class="${e.success ? 'ok' : 'nok'}"><b>${escapeHtml(e.hero)}</b> — ${what} <span class="mark">${e.success ? '✓' : '✗'}</span>
+        <br><span class="${a ? 'story-text' : ''}">${escapeHtml(result)}</span></li>`;
+    })
+    .join('')}</ol>`;
+}
+
+/** Doel, voortgang, beurten, logboek en "Wat doet …?" van de huidige scène — of de afloop als die vaststaat. */
+function actionBlock(game: Game, season: Season, sc: SceneView): string {
+  const progress = sceneProgress(season);
+  let dots = '';
+  for (let i = 0; i < SCENE_GOAL; i++) dots += `<span class="dot ${i < progress ? 'on' : ''}"></span>`;
+  const entries = season.log.filter((e) => e.scene === season.scene);
+  const head = `<div class="scene-goal">
+      <p><b>Doel van deze scène:</b> <span class="story-text">${escapeHtml(sc.doel)}</span></p>
+      <p class="progress-line"><span class="dots" aria-label="${progress} van ${SCENE_GOAL} gelukt">${dots}</span>
+        <span>${progress}/${SCENE_GOAL} gelukt</span><span>·</span><span class="turns">beurten over: <b>${turnsLeft(season)}</b>/${SCENE_TURNS}</span></p>
+    </div>
+    ${logList(entries, sc)}`;
   if (keyDone(season)) {
     const ok = season.keys[season.scene];
-    const text = ok ? sc.sleutel.gelukt : sc.sleutel.mislukt;
-    return `<div class="key-result ${ok ? 'ok' : 'nok'}">
-      <p class="key-verdict">${ok ? 'Sleutelmoment gelukt! ★' : 'Sleutelmoment mislukt…'}</p>
+    const text = ok ? sc.gelukt : sc.mislukt;
+    return `${head}<div class="key-result ${ok ? 'ok' : 'nok'}">
+      <p class="key-verdict">${ok ? 'Scène gelukt! ★' : 'De beurten zijn op…'}</p>
       <p class="story-text">${escapeHtml(text)}</p>
       ${readBar(text, readerOf(game))}
       <button class="btn big primary" data-action="scene-next">${season.scene + 1 >= MOMENT_SCENE ? 'Verder: het beslissende moment ▶' : 'Verder in het verhaal ▶'}</button>
     </div>`;
   }
-  const choice = currentChoice(game, season);
-  if (!choice) {
-    return `<div class="scene-actions">
-      <button class="btn small" data-action="ideas-toggle">${ideasOpenFor === sceneKey(game, season) ? 'Ideeën verbergen' : 'Ideeën als jullie vastzitten'}</button>
-      <button class="btn big primary" data-action="key-open">Naar het sleutelmoment ▶</button>
+  const hero = currentHero(game);
+  return `${head}<div class="scene-actions">
+      <button class="btn big primary act-btn" data-action="act-open">Wat doet ${escapeHtml(hero?.name ?? '…')}?</button>
+      <span class="hint">Overleg gerust samen. Wie aan de beurt is, kiest en rolt.</span>
     </div>`;
-  }
-  const heroes = presentHeroes(game);
-  return `<div class="key-moment">
-    <p class="key-label">Sleutelmoment — wat staat er op het spel?</p>
-    <p class="key-question story-text">${escapeHtml(sc.sleutel.vraag)}</p>
-    <p class="q">Hoe pakken jullie het aan?</p>
-    <div class="segs wrap">${sc.sleutel.aanpakken
-      .map(
-        (a, i) => `<button class="seg ${choice.approach === i ? 'active' : ''}" data-action="key-approach" data-id="${i}">
-          <span class="story-text">${escapeHtml(a.label)}</span><small class="story-text">past bij: ${escapeHtml(a.past)}</small></button>`,
-      )
-      .join('')}</div>
-    <p class="q">Wie probeert het?</p>
-    <div class="segs wrap">${heroes
-      .map((h) => `<button class="seg ${choice.heroId === h.id ? 'active' : ''}" data-action="key-hero" data-id="${h.id}">${escapeHtml(h.name)}</button>`)
-      .join('')}</div>
-    <p class="hint">Is die held goed in wat de aanpak vraagt? Kies dan “goed in” in het dobbelvenster.</p>
-    <div class="dice-actions">
-      <button class="btn big primary" data-action="key-roll" ${choice.approach !== null && choice.heroId ? '' : 'disabled'}>${DICE_ICON} Rol voor het sleutelmoment</button>
-      <button class="btn ghost" data-action="key-cancel">Nog even spelen</button>
-    </div>
-  </div>`;
 }
 
 function chapterCard(game: Game, season: Season): string {
@@ -226,15 +216,13 @@ function chapterCard(game: Game, season: Season): string {
     </div>`;
   } else {
     const sc = v.scenes[season.scene];
-    const open = ideasOpenFor === sceneKey(game, season);
     const readText =
       season.scene === 0 ? [v.recap ? `Vorige keer in Kakofonië: ${v.recap}` : '', v.intro ?? '', sc.tekst].filter(Boolean).join(' ') : sc.tekst;
     body = `<div class="scene">
       <p class="scene-label">${SCENE_NAMES[season.scene]} — lees voor!</p>
       <p class="scene-text story-text">${escapeHtml(sc.tekst)}</p>
-      ${keyDone(season) ? '' : readBar(readText, readerOf(game))}
-      ${open && !keyDone(season) ? `<ul class="ideas-list">${sc.ideeen.map((i) => `<li class="story-text">${escapeHtml(i)}</li>`).join('')}</ul>` : ''}
-      ${keyBlock(game, season, sc)}
+      ${season.log.some((e) => e.scene === season.scene) ? '' : readBar(readText, readerOf(game))}
+      ${actionBlock(game, season, sc)}
     </div>`;
   }
   // Wat er al gebeurde: eerdere scènes met het gevolg van hun sleutelmoment.
@@ -244,7 +232,8 @@ function chapterCard(game: Game, season: Season): string {
       ? `<details class="earlier"><summary>Wat er al gebeurde (${earlier.length})</summary>${earlier
           .map(
             (sc, i) => `<p><b>${SCENE_NAMES[i]}:</b> <span class="story-text">${escapeHtml(sc.tekst)}</span></p>
-              <p><b>${season.keys[i] ? 'Gelukt' : 'Mislukt'}:</b> <span class="story-text">${escapeHtml(season.keys[i] ? sc.sleutel.gelukt : sc.sleutel.mislukt)}</span></p>`,
+              ${logList(season.log.filter((e) => e.scene === i), sc)}
+              <p><b>${season.keys[i] ? 'Gelukt' : 'Mislukt'}:</b> <span class="story-text">${escapeHtml(season.keys[i] ? sc.gelukt : sc.mislukt)}</span></p>`,
           )
           .join('')}</details>`
       : '';
@@ -354,52 +343,12 @@ export async function handleSeasonAction(app: App, action: string, id: string): 
   const season = game.season;
   if (!season) return false;
   switch (action) {
-    case 'ideas-toggle': {
-      const key = sceneKey(game, season);
-      ideasOpenFor = ideasOpenFor === key ? '' : key;
-      app.changed();
+    case 'act-open':
+      openActions(app);
       return true;
-    }
-    case 'key-open':
-      if (!(await confirmDialog('Klaar met deze scène? Dan volgt het sleutelmoment.', 'Ja, nu!', 'Nog even spelen'))) return true;
-      keyChoice = { key: sceneKey(game, season), approach: null, heroId: null };
-      ideasOpenFor = '';
-      app.changed();
-      return true;
-    case 'key-cancel':
-      keyChoice = null;
-      app.changed();
-      return true;
-    case 'key-approach': {
-      const c = currentChoice(game, season);
-      if (c) c.approach = Number(id);
-      app.changed();
-      return true;
-    }
-    case 'key-hero': {
-      const c = currentChoice(game, season);
-      if (c) c.heroId = id;
-      app.changed();
-      return true;
-    }
-    case 'key-roll': {
-      const c = currentChoice(game, season);
-      if (!c || c.approach === null || !c.heroId || keyDone(season)) return true;
-      const hero = findHero(game, c.heroId);
-      openDice(app, c.heroId, {
-        title: `${hero.name}: sleutelmoment`,
-        onResult: (success) => {
-          recordKeyResult(game, success);
-          keyChoice = null;
-        },
-      });
-      return true;
-    }
     case 'scene-next':
       if (!keyDone(season)) return true;
       nextScene(game);
-      ideasOpenFor = '';
-      keyChoice = null;
       app.changed();
       // Meteen (niet vloeiend) naar het begin van het hoofdstuk: een tik tijdens het scrollen zou ernaast landen.
       document.querySelector('.chapter')?.scrollIntoView({ block: 'start' });
@@ -450,6 +399,5 @@ export async function handleSeasonAction(app: App, action: string, id: string): 
 export function resetSeasonUi(): void {
   round = null;
   aftermath = null;
-  keyChoice = null;
   finaleRounds = 0;
 }

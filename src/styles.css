@@ -766,6 +766,121 @@ small {
   max-width: 340px;
 }
 
+.scene-goal {
+  background: var(--accent-soft);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin: 10px 0;
+}
+
+.chapter .scene-goal p {
+  margin: 0 0 4px;
+  font-size: 21px;
+}
+
+.progress-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.progress-line > * {
+  margin-right: 8px;
+}
+
+.dots .dot {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.dots .dot.on {
+  background: var(--ok);
+}
+
+.story-log {
+  margin: 6px 0 10px;
+  padding-left: 26px;
+}
+
+.story-log li {
+  font-size: 19px;
+  margin-bottom: 6px;
+}
+
+.story-log li .mark {
+  font-family: var(--title);
+}
+
+.story-log li.ok .mark {
+  color: var(--ok);
+}
+
+.story-log li.nok .mark {
+  color: var(--nok);
+}
+
+.act-btn {
+  margin-right: 12px;
+}
+
+.action-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-gap: 10px;
+  margin: 12px 0;
+  text-align: left;
+}
+
+.action-btn {
+  font: inherit;
+  font-size: 20px;
+  text-align: left;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-height: 70px;
+}
+
+.action-btn small {
+  display: block;
+  color: var(--soft);
+  font-size: 16px;
+}
+
+.action-btn.done {
+  opacity: 0.45;
+}
+
+.action-btn.own {
+  background: #ecfccb;
+  border-style: dashed;
+}
+
+.action-btn .tag {
+  display: inline-block;
+  font-family: var(--title);
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 1px 8px;
+  margin-top: 4px;
+}
+
+.action-btn .tag.ok {
+  background: #dcfce7;
+}
+
+.action-btn .tag.again {
+  background: #ffedd5;
+}
+
 .key-result {
   border-radius: 14px;
   padding: 10px 16px;

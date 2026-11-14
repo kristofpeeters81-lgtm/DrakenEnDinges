@@ -2,28 +2,25 @@
 // In teksten mogen deze plaatshouders staan: {slechterik} {handlanger} {plaats} {figuur}.
 // Per hoofdstuk i: {plaats} = plaats i, {figuur} = figuur i. Finale: {plaats} = de laatste plaats, {figuur} = figuur 0.
 
-export interface KeyApproach {
-  /** Een concrete aanpak, bv. "Hem achternarennen over de markt". */
+/** Een actie die wie aan de beurt is kan kiezen, met een eigen gevolg als ze lukt of mislukt. */
+export interface SceneAction {
+  /** Concreet, bv. "De bakker ondervragen". */
   label: string;
-  /** Bij welke talenten het past, bv. "snel lopen, klimmen". */
+  /** Bij welke talenten het past, bv. "zeveren, slimme plannen". */
   past: string;
-}
-
-/** Sleutelmoment op het einde van een scène: wat staat er op het spel, hoe pakken jullie het aan, en wat volgt eruit. */
-export interface KeyMoment {
-  vraag: string;
-  aanpakken: KeyApproach[];
-  /** Gevolg als de worp lukt / mislukt (het verhaal gaat altijd verder). */
   gelukt: string;
+  /** Mag ook een 2e keer voorkomen (een mislukte actie mag opnieuw). */
   mislukt: string;
 }
 
-/** Een scène om voor te lezen: een concrete situatie die eindigt met een vraag aan de helden. */
+/** Een scène: situatie om voor te lezen, het doel van de scène, 8–10 acties, en de afloop
+ *  (gelukt = voortgang vol, mislukt = beurten op). */
 export interface Scene {
   tekst: string;
-  /** 2–3 hints, verborgen tot iemand op "Ideeën" tikt. */
-  ideeen: string[];
-  sleutel: KeyMoment;
+  doel: string;
+  acties: SceneAction[];
+  gelukt: string;
+  mislukt: string;
 }
 
 /** Een hoofdstuk met vertakkingen:
@@ -87,20 +84,18 @@ function isNamed(v: unknown): v is NamedThing {
   return isRecord(v) && isStr(v.naam) && isStr(v.beschrijving);
 }
 
-function isKey(v: unknown): v is KeyMoment {
-  return (
-    isRecord(v) &&
-    isStr(v.vraag) &&
-    isStr(v.gelukt) &&
-    isStr(v.mislukt) &&
-    Array.isArray(v.aanpakken) &&
-    v.aanpakken.length >= 2 &&
-    v.aanpakken.every((a) => isRecord(a) && isStr(a.label) && isStr(a.past))
-  );
+function isAction(v: unknown): v is SceneAction {
+  return isRecord(v) && ['label', 'past', 'gelukt', 'mislukt'].every((k) => isStr(v[k]));
 }
 
 function isScene(v: unknown): v is Scene {
-  return isRecord(v) && isStr(v.tekst) && isStrList(v.ideeen, 2) && isKey(v.sleutel);
+  return (
+    isRecord(v) &&
+    ['tekst', 'doel', 'gelukt', 'mislukt'].every((k) => isStr(v[k])) &&
+    Array.isArray(v.acties) &&
+    v.acties.length >= 4 &&
+    v.acties.every(isAction)
+  );
 }
 
 function isBranch<T>(v: unknown, each: (x: unknown) => x is T): v is { gelukt: T; mislukt: T } {
