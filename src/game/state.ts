@@ -2,6 +2,8 @@
 // bewaren (automatisch en als bestand) gebeurt elders.
 
 import { isListedPower } from '../data/ideas';
+import { emptyStats, type GuestTemplate, type HeroStats } from '../data/growth-data';
+import { applyCard, checkTitles, grantLevelUp, groupLevel, itemUses, titleName, type Buddy, type CardChoice, type CardKind } from './growth';
 import { addLead, advanceChapter, advanceScene, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
 
 export const MAX_HEROES = 6;
@@ -9,10 +11,12 @@ export const START_FRIES = 3;
 export const MAX_FRIES = 8;
 export const MAX_ITEMS = 6;
 
-/** Een voorwerp in de rugzak: nummer in de verborgen voorwerpenlijst + of het deze sessie al gebruikt is. */
+/** Een voorwerp in de rugzak: nummer in de verborgen voorwerpenlijst, niveau (1 roestig … 3 legendarisch)
+ *  en hoe vaak het deze sessie al gebruikt is (mag zo vaak als het niveau). */
 export interface HeroItem {
   item: number;
-  used: boolean;
+  level: number;
+  usedCount: number;
 }
 
 export interface Hero {
@@ -28,12 +32,26 @@ export interface Hero {
   /** Speelt mee in de huidige/volgende sessie (gasten kunnen in- en uitstappen). */
   present: boolean;
   fries: number;
-  powerUsed: boolean;
+  /** Hoe vaak de kracht deze sessie al gebruikt is (max. powerMax). */
+  powerUsedCount: number;
   /** Heeft al gerold sinds het begin van zijn laatste eigen beurt (slot tegen opnieuw rollen zonder frietje). */
   rolled: boolean;
   /** Zotte pech van dit moment (tot de volgende scène), of null. */
   pech: string | null;
   items: HeroItem[];
+  // ---- groei ----
+  level: number;
+  /** Level-ups die nog gekozen moeten worden (na een sessie, of voor een nieuwe held op groepsniveau). */
+  pendingLevelUps: number;
+  /** Extra "goed in" uit level-ups. */
+  extraGood: string[];
+  /** Zoveel keer per sessie mag de kracht (1 of 2). */
+  powerMax: number;
+  /** Extra frietjes bij de start van elke sessie. */
+  bonusFries: number;
+  buddy: Buddy | null;
+  stats: HeroStats;
+  titles: string[];
 }
 
 export type HeroDraft = Pick<Hero, 'name' | 'player' | 'kind' | 'goodAt' | 'badAt' | 'power' | 'powerApproved'>;
@@ -118,7 +136,27 @@ export function addHero(game: Game, draft: HeroDraft): Hero {
   if (game.heroes.length >= MAX_HEROES) throw new Error(`Maximum ${MAX_HEROES} helden`);
   const errors = validateDraft(draft);
   if (errors.length > 0) throw new Error(errors[0]);
-  const hero: Hero = { id: newId(), ...clean(draft), present: true, fries: START_FRIES, powerUsed: false, rolled: false, pech: null, items: [] };
+  // Nieuwe held start op het niveau van de groep die meespeelt: de ontbrekende level-ups mag hij meteen kiezen.
+  const playing = presentHeroes(game);
+  const level = groupLevel((playing.length > 0 ? playing : game.heroes).map((h) => h.level));
+  const hero: Hero = {
+    id: newId(),
+    ...clean(draft),
+    present: true,
+    fries: START_FRIES,
+    powerUsedCount: 0,
+    rolled: false,
+    pech: null,
+    items: [],
+    level: 1,
+    pendingLevelUps: level - 1,
+    extraGood: [],
+    powerMax: 1,
+    bonusFries: 0,
+    buddy: null,
+    stats: emptyStats(),
+    titles: [],
+  };
   game.heroes.push(hero);
   touch(game);
   return hero;
@@ -168,8 +206,8 @@ export function setPresent(game: Game, id: string, present: boolean): void {
   hero.present = present;
   // Instappen tijdens een sessie: met een volle frietjeszak en een ongebruikte kracht.
   if (present && game.sessionActive) {
-    hero.fries = Math.max(hero.fries, START_FRIES);
-    hero.powerUsed = false;
+    hero.fries = Math.max(hero.fries, START_FRIES + hero.bonusFries);
+    hero.powerUsedCount = 0;
     hero.rolled = false;
   }
   keepTurnOn(game, current && current.id !== id ? current.id : null);
@@ -182,11 +220,12 @@ export function startSession(game: Game): void {
   game.sessionActive = true;
   game.turn = 0;
   for (const hero of game.heroes) {
-    hero.fries = START_FRIES;
-    hero.powerUsed = false;
+    hero.fries = START_FRIES + hero.bonusFries;
+    hero.powerUsedCount = 0;
     hero.rolled = false;
     hero.pech = null;
-    for (const it of hero.items) it.used = false;
+    for (const it of hero.items) it.usedCount = 0;
+    if (hero.buddy) hero.buddy.usedCount = 0;
   }
   touch(game);
 }
@@ -226,7 +265,8 @@ export function beginSeasonSession(game: Game, counts: ContentCounts, rng: () =>
   } else {
     advanceChapter(game.season);
   }
-  if (isFinale(game.season)) startFinale(game.season, presentHeroes(game).length);
+  const present = presentHeroes(game);
+  if (isFinale(game.season)) startFinale(game.season, present.length, groupLevel(present.map((h) => h.level)));
   game.sessionMode = 'seizoen';
   touch(game);
 }
@@ -273,6 +313,7 @@ export function setGoalMet(game: Game, met: boolean): void {
 /** Beslissend moment van het huidige hoofdstuk afronden. */
 export function recordMoment(game: Game, successes: number): ChapterResult {
   const result = resolveMoment(requireSeason(game), successes, rollerCount(presentHeroes(game).length));
+  if (result === 'perfect') for (const h of presentHeroes(game)) bump(h, 'perfects');
   touch(game);
   return result;
 }
@@ -285,8 +326,83 @@ export function recordFinaleRound(game: Game, successes: number): boolean {
 }
 
 export function endSession(game: Game): void {
+  if (game.sessionActive) for (const h of presentHeroes(game)) grantLevelUp(h);
   game.sessionActive = false;
   touch(game);
+}
+
+// ---------- groei: titels, level-ups, gasten ----------
+
+/** Nieuwe titels sinds de laatste keer opvragen (voor een feestelijke melding; wordt niet bewaard). */
+let titleNews: string[] = [];
+
+export function takeTitleNews(): string[] {
+  const out = titleNews;
+  titleNews = [];
+  return out;
+}
+
+function bump(hero: Hero, stat: keyof HeroStats, by = 1): void {
+  hero.stats[stat] += by;
+  for (const id of checkTitles(hero)) titleNews.push(`${hero.name}: ${titleName(id)}!`);
+}
+
+/** Een worp (gewoon of groepsworp) is afgerond: telt mee voor titels. */
+export function recordRollStat(game: Game, id: string, success: boolean): void {
+  if (success) bump(findHero(game, id), 'successes');
+  touch(game);
+}
+
+export function chooseLevelCard(game: Game, id: string, card: CardKind, choice: CardChoice = {}): string | null {
+  const error = applyCard(findHero(game, id), card, choice);
+  if (!error) touch(game);
+  return error;
+}
+
+/** Kant-en-klare gast: meteen speelbaar, op het niveau van de groep. */
+export function addGuest(game: Game, guest: GuestTemplate): Hero {
+  return addHero(game, { name: guest.name, player: 'Gast', kind: guest.kind, goodAt: [guest.goodAt[0], guest.goodAt[1]], badAt: guest.badAt, power: guest.power, powerApproved: false });
+}
+
+export function canUsePower(hero: Hero): boolean {
+  return hero.powerUsedCount < hero.powerMax;
+}
+
+export function usePower(game: Game, id: string): boolean {
+  const hero = findHero(game, id);
+  if (!canUsePower(hero)) return false;
+  hero.powerUsedCount += 1;
+  touch(game);
+  return true;
+}
+
+export function undoPower(game: Game, id: string): void {
+  const hero = findHero(game, id);
+  hero.powerUsedCount = Math.max(0, hero.powerUsedCount - 1);
+  touch(game);
+}
+
+export function canUseBuddy(hero: Hero): boolean {
+  return hero.buddy !== null && hero.buddy.usedCount < hero.buddy.stage;
+}
+
+export function useBuddy(game: Game, id: string): boolean {
+  const hero = findHero(game, id);
+  if (!hero.buddy || !canUseBuddy(hero)) return false;
+  hero.buddy.usedCount += 1;
+  touch(game);
+  return true;
+}
+
+export function itemUsable(it: HeroItem): boolean {
+  return it.usedCount < itemUses(it.level);
+}
+
+/** Opdracht gedaan: +1 frietje en telt mee voor titels. */
+export function recordTask(game: Game, id: string): boolean {
+  const ok = addFry(game, id);
+  if (ok) bump(findHero(game, id), 'tasks');
+  return ok;
 }
 
 export function nextTurn(game: Game): void {
@@ -315,6 +431,7 @@ export function eatFry(game: Game, id: string): boolean {
   const hero = findHero(game, id);
   if (hero.fries <= 0) return false;
   hero.fries -= 1;
+  bump(hero, 'friesEaten');
   touch(game);
   return true;
 }
@@ -328,7 +445,12 @@ export function addFry(game: Game, id: string): boolean {
 }
 
 export function setPech(game: Game, id: string, pech: string | null): void {
-  findHero(game, id).pech = pech;
+  const hero = findHero(game, id);
+  hero.pech = pech;
+  if (pech) {
+    bump(hero, 'pech');
+    if (pech.includes('kip')) bump(hero, 'kip');
+  }
   touch(game);
 }
 
@@ -341,23 +463,19 @@ export function ownedItems(game: Game): number[] {
 export function giveItem(game: Game, id: string, item: number): boolean {
   const hero = findHero(game, id);
   if (hero.items.length >= MAX_ITEMS || ownedItems(game).includes(item)) return false;
-  hero.items.push({ item, used: false });
+  hero.items.push({ item, level: 1, usedCount: 0 });
+  bump(hero, 'finds');
   touch(game);
   return true;
 }
 
-/** Gebruikt een voorwerp (1× per sessie): de worp telt als "goed in". */
+/** Gebruikt een voorwerp (zo vaak per sessie als zijn niveau): de worp telt als "goed in". */
 export function useItem(game: Game, id: string, slot: number): boolean {
   const it = findHero(game, id).items[slot];
-  if (!it || it.used) return false;
-  it.used = true;
+  if (!it || !itemUsable(it)) return false;
+  it.usedCount += 1;
   touch(game);
   return true;
-}
-
-export function setPowerUsed(game: Game, id: string, used: boolean): void {
-  findHero(game, id).powerUsed = used;
-  touch(game);
 }
 
 /** Is er iets veranderd sinds de laatste keer bewaren als bestand? */

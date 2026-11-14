@@ -3,7 +3,7 @@
 import { requireGame, type App } from '../app';
 import { drawItem, getItem } from '../content';
 import { OPDRACHTEN, pickOther } from '../data/pech-opdrachten';
-import { addFry, findHero, giveItem, MAX_FRIES, MAX_ITEMS, ownedItems, presentHeroes } from '../game/state';
+import { findHero, giveItem, MAX_FRIES, MAX_ITEMS, ownedItems, presentHeroes, recordTask } from '../game/state';
 import { ask, toast } from '../ui/dialog';
 import { actionOf, escapeHtml, FRY_BAG_SVG, $ } from '../ui/dom';
 import { readBar, readerOf } from '../ui/readaloud';
@@ -45,7 +45,7 @@ export function openTask(app: App, heroId: string): void {
     if (!hit) return;
     if (hit.action === 'other') render();
     else if (hit.action === 'done') {
-      if (addFry(game, heroId)) toast(`Smakelijk, ${hero.name}! +1 frietje.`);
+      if (recordTask(game, heroId)) toast(`Smakelijk, ${hero.name}! +1 frietje.`);
       closeOverlay(app);
     } else if (hit.action === 'close') closeOverlay(app);
   };

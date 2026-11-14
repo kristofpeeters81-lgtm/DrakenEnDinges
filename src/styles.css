@@ -296,6 +296,80 @@ small {
   margin-top: 26px;
 }
 
+.level-line {
+  margin: 4px 0 0;
+  font-size: 17px;
+  color: var(--soft);
+}
+
+.titles {
+  color: #b45309;
+  font-weight: bold;
+}
+
+.levelup-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  background: var(--yellow);
+}
+
+.guest-card {
+  border-color: var(--soft);
+  color: var(--soft);
+}
+
+.buddy-line {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.backpack .item .lvl {
+  display: inline;
+  color: #b45309;
+}
+
+.backpack .item.lvl-3 {
+  background: #fef3c7;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-gap: 12px;
+  margin: 12px 0;
+}
+
+.reward-card {
+  font: inherit;
+  text-align: left;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  min-height: 110px;
+}
+
+.reward-card b {
+  display: block;
+  font-family: var(--title);
+  font-size: 21px;
+  font-weight: normal;
+  margin-bottom: 4px;
+}
+
+.reward-card.active {
+  background: var(--yellow);
+  box-shadow: 0 0 0 4px var(--accent);
+}
+
+.level-own {
+  max-width: 520px;
+  margin: 10px auto 0;
+  text-align: left;
+}
+
 /* aan/uit-schakelaar */
 .switch {
   display: flex;

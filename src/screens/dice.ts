@@ -3,13 +3,17 @@
 
 import { requireGame, type App } from '../app';
 import { diceNeeded, heroDiceCount, resolveRoll, rollDice, targetFor, type Difficulty, type Edge, type RollOutcome, type RollSetup } from '../game/dice';
-import { canRoll, currentHero, eatFry, findHero, markRolled, nextTurn, presentHeroes, recordSuccessForLead, setPech, useItem, type Hero } from '../game/state';
+import { canRoll, canUseBuddy, currentHero, eatFry, findHero, itemUsable, markRolled, nextTurn, presentHeroes, recordRollStat, recordSuccessForLead, setPech, useBuddy, useItem, type Hero } from '../game/state';
+import { itemUses } from '../game/growth';
 import { getItem } from '../content';
 import { isPechRoll, PECH, pickOther } from '../data/pech-opdrachten';
 import { actionOf, DICE_ICON, dieSvg, escapeHtml, FRY_BAG_SVG, $ } from '../ui/dom';
 import { toast } from '../ui/dialog';
 
 type Mode = 'setup' | 'enter' | 'rolling' | 'result';
+
+/** Het maatje van de held kan ook helpen (zoveel keer per sessie als zijn stadium). */
+const BUDDY = 'maatje';
 
 /** Groepsworp (beslissend moment, finale): geen beurtslot, geen helper; het resultaat gaat naar `onResult`. */
 export interface GroupRoll {
@@ -32,6 +36,7 @@ interface DiceState {
   /** Gekozen voorwerp uit de rugzak (index), of null. */
   itemSlot: number | null;
   itemSpent: boolean;
+  buddySpent: boolean;
   /** Uitslag van de pech-dobbelsteen na een mislukte worp. */
   pech: { die: number; text: string | null } | null;
 }
@@ -44,7 +49,7 @@ function seg(name: string, value: string, label: string, active: boolean, extra 
   return `<button class="seg ${active ? 'active' : ''}" data-action="${name}" data-id="${value}" aria-pressed="${active}">${label}${extra}</button>`;
 }
 
-function diceRow(s: DiceState, hero: Hero, helper: Hero | null, values: number[], kept: number | null): string {
+function diceRow(s: DiceState, hero: Hero, helper: { name: string } | null, values: number[], kept: number | null): string {
   const heroCount = heroDiceCount(s.edge);
   return `<div class="dice-row">${values
     .map((v, i) => {
@@ -66,7 +71,8 @@ function render(app: App, s: DiceState): void {
   const game = requireGame(app);
   const overlay = $('#overlay');
   const hero = findHero(game, s.heroId);
-  const helper = s.helperId ? findHero(game, s.helperId) : null;
+  const helper: { name: string } | null =
+    s.helperId === BUDDY ? { name: hero.buddy?.name ?? 'Maatje' } : s.helperId ? findHero(game, s.helperId) : null;
   const others = presentHeroes(game).filter((h) => h.id !== hero.id);
   const n = diceNeeded(setupOf(s));
   let body = '';
@@ -87,11 +93,12 @@ function render(app: App, s: DiceState): void {
         ${seg('diff', 'moeilijk', 'Héél moeilijk', s.difficulty === 'moeilijk', '<small>5 of meer</small>')}
       </div>
       ${
-        others.length > 0 && !s.group
+        (others.length > 0 || canUseBuddy(hero)) && !s.group
           ? `<p class="q">Helpt er iemand? <small>(mislukt het, dan hebt ge allebei pech)</small></p>
              <div class="segs wrap">
                ${seg('helper', '', 'Niemand', s.helperId === null)}
                ${others.map((o) => seg('helper', o.id, escapeHtml(o.name), s.helperId === o.id)).join('')}
+               ${canUseBuddy(hero) && hero.buddy ? seg('helper', BUDDY, `🐾 ${escapeHtml(hero.buddy.name)}`, s.helperId === BUDDY, '<small>uw maatje</small>') : ''}
              </div>`
           : ''
       }
@@ -159,13 +166,13 @@ function render(app: App, s: DiceState): void {
 
 /** Keuze om een voorwerp uit de rugzak te gebruiken (1× per sessie: telt als "goed in"). */
 function itemChoice(hero: Hero, s: DiceState): string {
-  const free = hero.items.map((it, slot) => ({ it, slot })).filter(({ it }) => !it.used);
+  const free = hero.items.map((it, slot) => ({ it, slot })).filter(({ it }) => itemUsable(it));
   if (free.length === 0) return '';
   const name = (item: number): string => getItem(item)?.naam ?? 'Voorwerp';
-  return `<p class="q">Gebruikt ${escapeHtml(hero.name)} iets uit de rugzak? <small>(1× per sessie: telt als “goed in”)</small></p>
+  return `<p class="q">Gebruikt ${escapeHtml(hero.name)} iets uit de rugzak? <small>(telt als “goed in”)</small></p>
     <div class="segs wrap">
       ${seg('item', '', 'Nee', s.itemSlot === null)}
-      ${free.map(({ it, slot }) => seg('item', String(slot), `<span class="story-text">${escapeHtml(name(it.item))}</span>`, s.itemSlot === slot)).join('')}
+      ${free.map(({ it, slot }) => seg('item', String(slot), `<span class="story-text">${escapeHtml(name(it.item))}</span>`, s.itemSlot === slot, `<small>nog ${itemUses(it.level) - it.usedCount}×</small>`)).join('')}
     </div>`;
 }
 
@@ -180,6 +187,11 @@ function finish(app: App, s: DiceState, dice: number[]): void {
     useItem(requireGame(app), s.heroId, s.itemSlot);
     s.itemSpent = true;
   }
+  if (s.helperId === BUDDY && !s.buddySpent) {
+    useBuddy(requireGame(app), s.heroId);
+    s.buddySpent = true;
+  }
+  recordRollStat(requireGame(app), s.heroId, s.outcome.success);
   // Slot meteen zetten (niet pas bij sluiten): zo helpt venster sluiten of de pagina verversen niet om opnieuw te rollen.
   if (!s.group) {
     const game = requireGame(app);
@@ -223,7 +235,7 @@ export function openDice(app: App, heroId: string, group: GroupRoll | null = nul
   }
   // Enkel wie aan de beurt is geeft na zijn worp de beurt door; een uitzonderlijke worp van iemand anders niet.
   const wasTurn = !group && currentHero(game)?.id === heroId;
-  const s: DiceState = { heroId, edge: 'gewoon', difficulty: 'gewoon', helperId: null, mode: 'setup', entered: [], shown: [], outcome: null, source: 'app', group, itemSlot: null, itemSpent: false, pech: null };
+  const s: DiceState = { heroId, edge: 'gewoon', difficulty: 'gewoon', helperId: null, mode: 'setup', entered: [], shown: [], outcome: null, source: 'app', group, itemSlot: null, itemSpent: false, buddySpent: false, pech: null };
 
   const close = (): void => {
     overlay.hidden = true;
@@ -264,7 +276,7 @@ export function openDice(app: App, heroId: string, group: GroupRoll | null = nul
         s.pech = { die, text };
         if (text) {
           setPech(game, s.heroId, text);
-          if (s.helperId) setPech(game, s.helperId, text);
+          if (s.helperId && s.helperId !== BUDDY) setPech(game, s.helperId, text);
         }
         app.changed();
         break;

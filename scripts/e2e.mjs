@@ -333,7 +333,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 6, 'bestand heeft app-naam en versie (6)');
+  check(saved.app === 'draken-en-dinges' && saved.version === 7, 'bestand heeft app-naam en versie (7)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -371,8 +371,42 @@ try {
   const friesAfter = await page.$$eval('.table-card .fries-label b', (els) => els.map((e) => e.textContent));
   check(friesAfter.join(',') === '2,3', `frietjes bewaard gebleven (${friesAfter.join(',')})`);
 
-  console.log('Seizoen (testinhoud)');
+  console.log('Groei');
   await stopSessionLater();
+  const pendingButtons = (await page.$$('[data-action="levelup"]')).length;
+  check(pendingButtons === 2, 'na een sessie: level-up voor elke held die meespeelde (niet voor de afwezige gast)');
+  const picks = [];
+  while (await page.$('[data-action="levelup"]')) {
+    await click('[data-action="levelup"]');
+    await page.waitForSelector('.levelup-panel');
+    check((await page.$$('.reward-card')).length === 3, 'level-up: 3 beloningskaarten');
+    if (picks.length === 0) await shot('level-up');
+    const offered = await page.$$eval('.reward-card', (els) => els.map((e) => e.dataset.id));
+    const card = ['maatje', 'talent', 'kracht', 'frietzak'].find((c) => offered.includes(c) && !picks.includes(c)) ?? offered[0];
+    picks.push(card);
+    await click(`.reward-card[data-id="${card}"]`);
+    if (card === 'maatje') await click('[data-action="buddy"]');
+    if (card === 'talent') await click('[data-action="talent"]');
+    await click('[data-action="confirm"]');
+    await page.waitForSelector('#overlay', { hidden: true });
+  }
+  const levels = await page.$$eval('.hero-card:not(.absent) .level-line', (els) => els.map((e) => e.textContent));
+  check(levels.every((l) => l.includes('Niveau 2')), `beide helden zijn nu niveau 2 (gekozen: ${picks.join(', ')})`);
+
+  // Kant-en-klare gast speelt mee op groepsniveau
+  const cardsBefore = (await page.$$('.hero-card')).length;
+  await click('[data-action="guest"]');
+  await waitDialog('gast');
+  await page.$$eval('#dialog-buttons button', (els) => els[1].click());
+  await page.waitForFunction((n) => document.querySelectorAll('.hero-card').length === n + 1, {}, cardsBefore);
+  check(true, 'gast toegevoegd');
+  check((await page.$$('[data-action="levelup"]')).length === 1, 'de gast mag meteen een level-up kiezen (groepsniveau 2)');
+  // De gast speelt vandaag toch niet mee (zodat de rest van de test met 2 helden blijft)
+  await shot('helden-met-gast');
+  await page.$$eval('.hero-card .switch', (els) => els[els.length - 1].click());
+  await page.waitForFunction((n) => document.querySelectorAll('.hero-card.absent').length === 2, {}, cardsBefore);
+
+  console.log('Seizoen (testinhoud)');
   await startSessionAs('seizoen');
   await page.waitForSelector('.season');
   check((await page.$('.opening')) === null, 'in een seizoen geen losse beginscène');

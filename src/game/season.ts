@@ -150,13 +150,14 @@ export function advanceChapter(season: Season): void {
   season.goalMet = false;
 }
 
-export function finaleHearts(meter: number, clues: number, present: number): number {
-  return Math.max(1, 2 + Math.ceil(meter / 2) + (present >= 4 ? 1 : 0) - clues);
+/** Levens in de finale. Sterkere helden (gemiddeld niveau 4, 7, 10) = de slechterik schaalt mee. */
+export function finaleHearts(meter: number, clues: number, present: number, groupLevel = 1): number {
+  return Math.max(1, 2 + Math.ceil(meter / 2) + (present >= 4 ? 1 : 0) + Math.floor((groupLevel - 1) / 3) - clues);
 }
 
-export function startFinale(season: Season, present: number): void {
+export function startFinale(season: Season, present: number, groupLevel = 1): void {
   if (!isFinale(season) || season.hearts !== null) return;
-  season.hearts = finaleHearts(season.meter, season.clues, present);
+  season.hearts = finaleHearts(season.meter, season.clues, present, groupLevel);
   season.heartsStart = season.hearts;
 }
 

@@ -17,12 +17,16 @@ import {
   type Game,
   type Hero,
   type SessionMode,
+  addGuest,
 } from '../game/state';
 import { actionOf, escapeHtml } from '../ui/dom';
 import { ask, confirmDialog, toast } from '../ui/dialog';
 import { resetSeasonUi } from './season';
 import { readMode, setReadMode, type ReadMode } from '../ui/readaloud';
 import { speechAvailable } from '../platform/speech';
+import { openLevelUp } from './levelup';
+import { GUESTS } from '../data/growth-data';
+import { titleName } from '../game/growth';
 
 /** Vraagt wat er vandaag gespeeld wordt: verder in het seizoen (of een nieuw) of een los avontuur. */
 async function chooseSessionKind(game: Game): Promise<SessionMode | null> {
@@ -46,6 +50,12 @@ function heroCard(hero: Hero): string {
       <h2>${escapeHtml(hero.name)}</h2>
       <p class="player">${hero.player ? `gespeeld door ${escapeHtml(hero.player)}` : '&nbsp;'}</p>
       <p class="kind">${escapeHtml(hero.kind)}</p>
+      <p class="level-line">Niveau ${hero.level}${hero.titles.length > 0 ? ` · <span class="titles">${hero.titles.map((t) => escapeHtml(titleName(t))).join(' · ')}</span>` : ''}</p>
+      ${
+        hero.pendingLevelUps > 0
+          ? `<button class="btn levelup-btn" data-action="levelup" data-id="${hero.id}">⭐ Level-up! Kies een beloning${hero.pendingLevelUps > 1 ? ` (${hero.pendingLevelUps})` : ''}</button>`
+          : ''
+      }
       <label class="switch">
         <input type="checkbox" data-change="present" data-id="${hero.id}" ${hero.present ? 'checked' : ''} />
         <span class="track"><span class="knob"></span></span>
@@ -73,7 +83,8 @@ export function renderHeroes(app: App): void {
         ${
           full
             ? ''
-            : `<button class="card add-card" data-action="add"><span class="plus">+</span>Nieuwe held<small>${game.heroes.length}/${MAX_HEROES}</small></button>`
+            : `<button class="card add-card" data-action="add"><span class="plus">+</span>Nieuwe held<small>${game.heroes.length}/${MAX_HEROES}</small></button>
+               <button class="card add-card guest-card" data-action="guest"><span class="plus">+</span>Gast<small>kant-en-klaar, meteen spelen</small></button>`
         }
       </div>
       <div class="settings">
@@ -111,6 +122,26 @@ export function renderHeroes(app: App): void {
         case 'save':
           await app.saveToFile();
           break;
+        case 'levelup':
+          openLevelUp(app, hit.id);
+          break;
+        case 'guest': {
+          const free = GUESTS.filter((g) => !game.heroes.some((h) => h.name === g.name));
+          if (free.length === 0) {
+            toast('Alle gasten spelen al mee!');
+            break;
+          }
+          const pick = await ask('Welke gast speelt er mee?', [
+            { label: 'Annuleer', value: '' },
+            ...free.map((g) => ({ label: `${g.name} — ${g.kind}`, value: g.name })),
+          ]);
+          const guest = free.find((g) => g.name === pick);
+          if (!guest) break;
+          const hero = addGuest(game, guest);
+          app.changed();
+          toast(hero.pendingLevelUps > 0 ? `Welkom, ${hero.name}! Kies eerst nog ${hero.pendingLevelUps} level-up(s).` : `Welkom, ${hero.name}!`);
+          break;
+        }
         case 'add':
           app.go({ name: 'editor', heroId: null });
           break;

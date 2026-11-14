@@ -10,7 +10,10 @@ import {
   MAX_FRIES,
   nextTurn,
   presentHeroes,
-  setPowerUsed,
+  canUsePower,
+  itemUsable,
+  undoPower,
+  usePower,
   setPech,
   chooseOpening,
   type Hero,
@@ -22,6 +25,8 @@ import { handleSeasonAction, seasonBlock } from './season';
 import { openEidastinkt, openOracle, openPrikkel, oracleHistory } from './oracle';
 import { getItem, getOpening, openingCount } from '../content';
 import { openFind, openTask } from './tasks';
+import { ITEM_LEVEL_NAMES, itemUses, titleName } from '../game/growth';
+import { BUDDIES, BUDDY_STAGES } from '../data/growth-data';
 import { readBar, readerOf } from '../ui/readaloud';
 
 function fries(hero: Hero): string {
@@ -66,10 +71,12 @@ function heroCard(hero: Hero, isTurn: boolean): string {
         <h2>${escapeHtml(hero.name)}</h2>
         ${isTurn ? '<span class="badge">aan de beurt</span>' : ''}
       </div>
+      <p class="level-line">Niveau ${hero.level}${hero.titles.length > 0 ? ` · <span class="titles">${hero.titles.map((t) => escapeHtml(titleName(t))).join(' · ')}</span>` : ''}</p>
       <p class="kind">${escapeHtml(hero.kind)}${hero.player ? ` · <span class="player">${escapeHtml(hero.player)}</span>` : ''}</p>
       <ul class="chips">
         <li class="chip good">👍 ${escapeHtml(hero.goodAt[0])}</li>
         <li class="chip good">👍 ${escapeHtml(hero.goodAt[1])}</li>
+        ${hero.extraGood.map((g) => `<li class="chip good">👍 ${escapeHtml(g)}</li>`).join('')}
         <li class="chip bad">👎 ${escapeHtml(hero.badAt)}</li>
       </ul>
       <div class="fries-row">
@@ -92,17 +99,23 @@ function heroCard(hero: Hero, isTurn: boolean): string {
           ? `<ul class="backpack" aria-label="Rugzak">${hero.items
               .map(
                 (it) =>
-                  `<li class="item ${it.used ? 'used' : ''}" title="${it.used ? 'Deze sessie al gebruikt' : 'Nog te gebruiken deze sessie'}"><span class="story-text">${escapeHtml(getItem(it.item)?.naam ?? 'Voorwerp')}</span></li>`,
+                  `<li class="item lvl-${it.level} ${itemUsable(it) ? '' : 'used'}" title="${ITEM_LEVEL_NAMES[it.level - 1]} · ${itemUses(it.level) - it.usedCount}× over deze sessie"><span class="story-text">${escapeHtml(getItem(it.item)?.naam ?? 'Voorwerp')}</span>${it.level > 1 ? ` <small class="lvl">${ITEM_LEVEL_NAMES[it.level - 1]}</small>` : ''}</li>`,
               )
               .join('')}</ul>`
           : ''
       }
-      <div class="power ${hero.powerUsed ? 'used' : ''}">
+      <div class="power ${canUsePower(hero) ? '' : 'used'}">
         ${BOLT_ICON}<span class="power-text">${escapeHtml(hero.power)}</span>
-        <button class="btn small ${hero.powerUsed ? 'ghost' : ''}" data-action="power" data-id="${hero.id}">
-          ${hero.powerUsed ? 'Gebruikt ✓' : 'Gebruiken'}
+        <button class="btn small ${canUsePower(hero) ? '' : 'ghost'}" data-action="power" data-id="${hero.id}">
+          ${canUsePower(hero) ? `Gebruiken${hero.powerMax > 1 ? ` (${hero.powerMax - hero.powerUsedCount}×)` : ''}` : 'Gebruikt ✓'}
         </button>
       </div>
+      ${
+        hero.buddy
+          ? `<p class="buddy-line">🐾 Maatje: <b>${escapeHtml(hero.buddy.name)}</b> — ${escapeHtml(BUDDIES[hero.buddy.kind]?.soort ?? '')}
+              <small>(${BUDDY_STAGES[hero.buddy.stage - 1]}, nog ${hero.buddy.stage - hero.buddy.usedCount}× helpen)</small></p>`
+          : ''
+      }
       ${
         hero.rolled
           ? '<button class="btn roll-small" disabled>Al gerold — wacht op uw beurt</button>'
@@ -186,7 +199,8 @@ export function renderTable(app: App): void {
         case 'power': {
           const hero = present.find((h) => h.id === hit.id);
           if (!hero) return;
-          setPowerUsed(game, hero.id, !hero.powerUsed);
+          if (canUsePower(hero)) usePower(game, hero.id);
+          else undoPower(game, hero.id);
           app.changed();
           break;
         }

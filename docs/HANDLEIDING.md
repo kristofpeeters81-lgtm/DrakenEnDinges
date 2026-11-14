@@ -15,6 +15,20 @@
 - Op het heldenscherm zet je per held **"Speelt mee vandaag"** aan of uit. Zo kan een gast (vriendinnetje, oma)
   één avond meespelen en de volgende keer weer uitstappen. Ook tijdens een sessie kan dat.
 
+## Sterker worden
+- Na elke sessie krijgt elke held die meespeelde een **level-up**: op het heldenscherm staat dan
+  **⭐ Level-up! Kies een beloning**. Kies 1 van 3 kaarten:
+  - **Nieuw talent**: een extra "goed in" (max. 2 extra).
+  - **Sterkere kracht**: uw speciale kracht mag 2× per sessie.
+  - **Grotere frietzak**: 1 frietje meer bij de start van elke sessie (max. +2).
+  - **Voorwerp oppoetsen**: roestig → blinkend → legendarisch = 1×, 2× of 3× per sessie te gebruiken.
+  - **Een maatje**: een zot dier dat meegaat. In het dobbelvenster kan het **helpen** (zoals een helper).
+  - **Maatje leert een trucje**: klein → groter → straf = 1×, 2× of 3× per sessie helpen.
+- **Titels** krijg je vanzelf (bv. *Kiekenkoning(in)* na 3× in een kip veranderd); ze staan bij je niveau.
+- **Gast**: tik op **+ Gast** voor een kant-en-klaar personage, of maak een nieuwe held. Een nieuwe held start op het
+  niveau van de helden die meespelen en mag de ontbrekende level-ups meteen kiezen.
+- De slechterik groeit mee: hoe sterker de groep, hoe meer levens hij heeft in de finale.
+
 ## De speeltafel
 - **Aan de beurt**: wie nu iets mag doen. **Volgende ▶** geeft de beurt door.
 - **Rollen!**: kies *goed in / gewoon / slecht in*, *gewoon / héél moeilijk* en of iemand helpt.

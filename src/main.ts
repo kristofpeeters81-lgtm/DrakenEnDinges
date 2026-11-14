@@ -16,6 +16,7 @@ import { warmUpVoices } from './platform/speech';
 import { installReadAloud } from './ui/readaloud';
 import { $ } from './ui/dom';
 import { ask, toast } from './ui/dialog';
+import { takeTitleNews } from './game/state';
 
 const root = $('#app');
 let game: Game | null = null;
@@ -65,6 +66,8 @@ const app: App = {
   changed() {
     persist();
     render();
+    const titles = takeTitleNews();
+    if (titles.length > 0) toast(`🏆 Nieuwe titel — ${titles.join(' · ')}`);
   },
   async saveToFile() {
     if (!game) return;

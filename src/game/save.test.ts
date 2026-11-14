@@ -120,11 +120,26 @@ describe('spelbestand', () => {
 
   it('bewaart rugzak en pech', () => {
     const g = sampleGame();
-    g.heroes[0].items = [{ item: 4, used: true }];
+    g.heroes[0].items = [{ item: 4, level: 2, usedCount: 1 }];
     g.heroes[1].pech = 'kip';
     const loaded = parseGame(serializeGame(g));
-    expect(loaded.heroes[0].items).toEqual([{ item: 4, used: true }]);
+    expect(loaded.heroes[0].items).toEqual([{ item: 4, level: 2, usedCount: 1 }]);
     expect(loaded.heroes[1].pech).toBe('kip');
+  });
+
+  it('een bestand van versie 6 krijgt groeigegevens (niveau 1) en tellers voor kracht en voorwerpen', () => {
+    const raw = JSON.parse(serializeGame(sampleGame())) as { version: number; game: { heroes: Array<Record<string, unknown>> } };
+    raw.version = 6;
+    for (const h of raw.game.heroes) {
+      for (const k of ['powerUsedCount', 'level', 'pendingLevelUps', 'extraGood', 'powerMax', 'bonusFries', 'buddy', 'stats', 'titles']) delete h[k];
+      h.powerUsed = true;
+      h.items = [{ item: 2, used: true }];
+    }
+    const loaded = parseGame(JSON.stringify(raw));
+    expect(loaded.heroes[0].level).toBe(1);
+    expect(loaded.heroes[0].powerUsedCount).toBe(1);
+    expect(loaded.heroes[0].items).toEqual([{ item: 2, level: 1, usedCount: 1 }]);
+    expect(loaded.heroes[0].buddy).toBeNull();
   });
 
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {

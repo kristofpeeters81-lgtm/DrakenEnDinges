@@ -87,12 +87,12 @@ describe('sessies en beurten', () => {
   it('start sessie: iedereen 3 frietjes, kracht weer beschikbaar, eerste aan de beurt', () => {
     const { g, a } = threeHeroes();
     a.fries = 0;
-    a.powerUsed = true;
+    a.powerUsedCount = 1;
     startSession(g);
     expect(g.session).toBe(1);
     expect(g.sessionActive).toBe(true);
     expect(a.fries).toBe(3);
-    expect(a.powerUsed).toBe(false);
+    expect(a.powerUsedCount).toBe(0);
     expect(currentHero(g)?.name).toBe('A');
   });
 
@@ -136,10 +136,10 @@ describe('sessies en beurten', () => {
     startSession(g);
     setPresent(g, b.id, false);
     b.fries = 0;
-    b.powerUsed = true;
+    b.powerUsedCount = 1;
     setPresent(g, b.id, true);
     expect(b.fries).toBe(3);
-    expect(b.powerUsed).toBe(false);
+    expect(b.powerUsedCount).toBe(0);
   });
 });
 

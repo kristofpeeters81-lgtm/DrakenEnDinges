@@ -3,10 +3,12 @@
 // Oude bestanden moeten na app-updates blijven werken: verhoog SAVE_VERSION en voeg een stap toe in migrate().
 
 import { CHAPTERS, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, type ChapterResult, type Season } from './season';
+import { emptyStats, type HeroStats } from '../data/growth-data';
+import { MAX_BONUS_FRIES, MAX_BUDDY_STAGE, MAX_EXTRA_GOOD, MAX_ITEM_LEVEL, MAX_LEVEL, MAX_POWER_USES, type Buddy } from './growth';
 import { MAX_FRIES, MAX_HEROES, MAX_ITEMS, type Game, type Hero, type HeroItem, type SessionMode } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export class SaveError extends Error {}
 
@@ -43,6 +45,7 @@ function migrate(game: unknown, fromVersion: number): unknown {
   if (fromVersion < 4) g = v3ToV4(g);
   if (fromVersion < 5) g = v4ToV5(g);
   if (fromVersion < 6) g = v5ToV6(g);
+  if (fromVersion < 7) g = v6ToV7(g);
   return g;
 }
 
@@ -51,6 +54,31 @@ function migrate(game: unknown, fromVersion: number): unknown {
 /** Versie 4: seizoenen. Oude spellen: nog geen seizoen; een lopende sessie was een los avontuur. */
 /** Versie 5: scènes in een hoofdstuk. Oud seizoen: begin van het hoofdstuk, of het moment als dat al gespeeld is. */
 /** Versie 6: zotte pech, rugzak en beloning. Oude helden: geen pech, lege rugzak; beloning telt als gegeven. */
+/** Versie 7: groei. Oude helden: niveau 1, geen extra's; kracht/voorwerpen als tellers. */
+function v6ToV7(game: unknown): unknown {
+  if (!isRecord(game) || !Array.isArray(game.heroes)) return game;
+  const heroes = game.heroes.map((h: unknown) => {
+    if (!isRecord(h)) return h;
+    const items = Array.isArray(h.items)
+      ? h.items.map((it: unknown) => (isRecord(it) ? { item: it.item, level: 1, usedCount: it.used === true ? 1 : 0 } : it))
+      : h.items;
+    return {
+      ...h,
+      items,
+      powerUsedCount: h.powerUsed === true ? 1 : 0,
+      level: 1,
+      pendingLevelUps: 0,
+      extraGood: [],
+      powerMax: 1,
+      bonusFries: 0,
+      buddy: null,
+      stats: emptyStats(),
+      titles: [],
+    };
+  });
+  return { ...game, heroes };
+}
+
 function v5ToV6(game: unknown): unknown {
   if (!isRecord(game) || !Array.isArray(game.heroes)) return game;
   const heroes = game.heroes.map((h: unknown) => (isRecord(h) ? { ...h, pech: null, items: [] } : h));
@@ -104,11 +132,29 @@ function bool(o: Record<string, unknown>, key: string): boolean {
   return typeof v === 'boolean' ? v : broken();
 }
 
+function readStrings(v: unknown, max: number): string[] {
+  if (!Array.isArray(v) || v.length > max) broken();
+  return v.map((s: unknown) => (typeof s === 'string' ? s.slice(0, 200) : broken()));
+}
+
+function readBuddy(v: unknown): Buddy | null {
+  if (v === null) return null;
+  if (!isRecord(v)) broken();
+  return { kind: num(v, 'kind', 0, 999), name: str(v, 'name'), stage: num(v, 'stage', 1, MAX_BUDDY_STAGE), usedCount: num(v, 'usedCount', 0, MAX_BUDDY_STAGE) };
+}
+
+function readStats(v: unknown): HeroStats {
+  if (!isRecord(v)) broken();
+  const s = emptyStats();
+  for (const k of Object.keys(s) as Array<keyof HeroStats>) s[k] = num(v, k, 0, 1_000_000);
+  return s;
+}
+
 function readItems(v: unknown): HeroItem[] {
   if (!Array.isArray(v) || v.length > MAX_ITEMS) broken();
   return v.map((it: unknown) => {
     if (!isRecord(it)) broken();
-    return { item: num(it, 'item', 0, 9999), used: bool(it, 'used') };
+    return { item: num(it, 'item', 0, 9999), level: num(it, 'level', 1, MAX_ITEM_LEVEL), usedCount: num(it, 'usedCount', 0, MAX_ITEM_LEVEL) };
   });
 }
 
@@ -127,10 +173,18 @@ function readHero(v: unknown): Hero {
     powerApproved: bool(v, 'powerApproved'),
     present: bool(v, 'present'),
     fries: num(v, 'fries', 0, MAX_FRIES),
-    powerUsed: bool(v, 'powerUsed'),
+    powerUsedCount: num(v, 'powerUsedCount', 0, MAX_POWER_USES),
     rolled: bool(v, 'rolled'),
     pech: v.pech === null ? null : str(v, 'pech'),
     items: readItems(v.items),
+    level: num(v, 'level', 1, MAX_LEVEL),
+    pendingLevelUps: num(v, 'pendingLevelUps', 0, MAX_LEVEL),
+    extraGood: readStrings(v.extraGood, MAX_EXTRA_GOOD),
+    powerMax: num(v, 'powerMax', 1, MAX_POWER_USES),
+    bonusFries: num(v, 'bonusFries', 0, MAX_BONUS_FRIES),
+    buddy: readBuddy(v.buddy),
+    stats: readStats(v.stats),
+    titles: readStrings(v.titles, 50),
   };
 }
 
