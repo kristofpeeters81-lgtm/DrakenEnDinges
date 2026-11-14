@@ -471,6 +471,251 @@ small {
   font-size: 40px;
 }
 
+/* ---------- seizoen ---------- */
+
+.season {
+  margin-bottom: 18px;
+}
+
+.season-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  background: #2b2520;
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 10px 18px;
+}
+
+.season-head > div {
+  margin: 4px 14px 4px 0;
+}
+
+.test-badge {
+  background: var(--yellow);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 1px 8px;
+  font-size: 15px;
+  margin-left: 6px;
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+}
+
+.meter-label {
+  margin-right: 8px;
+}
+
+.meter-bar {
+  display: flex;
+  margin-right: 8px;
+}
+
+.seg-m {
+  width: 22px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  margin-right: 3px;
+  background: transparent;
+}
+
+.seg-m.on {
+  background: #ef4444;
+}
+
+.star {
+  color: #6b6257;
+  font-size: 22px;
+  margin-left: 2px;
+}
+
+.star.on {
+  color: #fde047;
+}
+
+.lead .star.goal {
+  color: #86efac;
+}
+
+.chapter {
+  background: #fff7e6;
+  border: 3px solid var(--ink);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 14px 20px 18px;
+}
+
+.chapter-label {
+  font-family: var(--title);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.chapter h3.chapter-title {
+  font-size: 30px;
+  margin: 4px 0 8px;
+}
+
+.chapter .story-text,
+.chapter p {
+  font-size: 22px;
+  line-height: 1.4;
+}
+
+.chapter p {
+  margin: 0 0 10px;
+}
+
+.recap {
+  border-left: 5px solid var(--line);
+  padding-left: 12px;
+  color: var(--soft);
+}
+
+.chapter-facts {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+}
+
+.chapter-facts li {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.goal {
+  background: var(--accent-soft);
+  border-radius: 12px;
+  padding: 8px 14px;
+}
+
+.moment {
+  border: 3px dashed var(--accent);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  background: #fff;
+}
+
+.moment h3 {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.moment.done {
+  border-style: solid;
+}
+
+.moment.done.ok {
+  border-color: var(--ok);
+  background: #f0fdf4;
+}
+
+.moment.done.nok {
+  border-color: var(--nok);
+  background: #fef2f2;
+}
+
+.moment-result {
+  font-family: var(--title);
+  font-size: 28px;
+}
+
+.moment.won .moment-result {
+  font-size: 56px;
+  color: var(--ok);
+  animation: pop 0.35s ease-out;
+}
+
+.moment-start {
+  margin-top: 12px;
+}
+
+.lead-safe {
+  background: #ecfccb;
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+.rollers {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+}
+
+.rollers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--line);
+  padding: 6px 0;
+  font-size: 21px;
+}
+
+.roller-name {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.roll-status {
+  font-family: var(--title);
+  font-size: 18px;
+}
+
+.roll-status.ok {
+  color: var(--ok);
+}
+
+.roll-status.nok {
+  color: var(--nok);
+}
+
+.ally-die .die {
+  width: 44px;
+  height: 44px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.hearts {
+  margin: 4px 0 8px;
+}
+
+.heart {
+  font-size: 34px;
+  margin-right: 4px;
+}
+
+.heart.full {
+  color: #dc2626;
+}
+
+.heart.lost {
+  color: #d6d3d1;
+}
+
+.clues {
+  border: 3px solid var(--ink);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 8px 18px;
+  background: #fff;
+  margin-top: -6px;
+}
+
+.clues summary {
+  font-family: var(--title);
+  cursor: pointer;
+}
+
 .opening {
   background: #fff7e6;
   border: 3px solid var(--ink);
@@ -1103,6 +1348,8 @@ small {
   z-index: 50;
   max-width: calc(100% - 32px);
   text-align: center;
+  /* Een melding mag nooit een knop eronder blokkeren (gsm: knoppen staan soms net onder de melding). */
+  pointer-events: none;
 }
 
 #toast.error {

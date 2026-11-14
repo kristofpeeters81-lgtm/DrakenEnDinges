@@ -2,10 +2,11 @@
 // Wordt gebruikt voor het bestand (bewaren/laden) én voor de automatische reservekopie in de browser.
 // Oude bestanden moeten na app-updates blijven werken: verhoog SAVE_VERSION en voeg een stap toe in migrate().
 
-import { MAX_FRIES, MAX_HEROES, type Game, type Hero } from './state';
+import { CHAPTERS, MAX_LEAD_FROM_ROLLS, METER_MAX, type ChapterResult, type Season } from './season';
+import { MAX_FRIES, MAX_HEROES, type Game, type Hero, type SessionMode } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export class SaveError extends Error {}
 
@@ -39,11 +40,18 @@ function migrate(game: unknown, fromVersion: number): unknown {
   let g = game;
   if (fromVersion < 2) g = v1ToV2(g);
   if (fromVersion < 3) g = v2ToV3(g);
+  if (fromVersion < 4) g = v3ToV4(g);
   return g;
 }
 
 /** Versie 2: helden kregen een "rolled"-slot (één worp per beurt). Oude spellen: nog niemand heeft gerold. */
 /** Versie 3: beginscènes (welke nu, welke al geweest). Oude spellen: nog geen. */
+/** Versie 4: seizoenen. Oude spellen: nog geen seizoen; een lopende sessie was een los avontuur. */
+function v3ToV4(game: unknown): unknown {
+  if (!isRecord(game)) return game;
+  return { ...game, season: null, usedVillains: [], sessionMode: game.sessionActive === true ? 'los' : null };
+}
+
 function v2ToV3(game: unknown): unknown {
   if (!isRecord(game)) return game;
   return { ...game, opening: null, usedOpenings: [] };
@@ -111,6 +119,40 @@ function readUsed(v: unknown): number[] {
   return v.map((n: unknown) => (typeof n === 'number' && Number.isInteger(n) && n >= 0 ? n : broken()));
 }
 
+function readMode(v: unknown): SessionMode | null {
+  if (v === null || v === 'seizoen' || v === 'los') return v;
+  return broken();
+}
+
+function readNullableCount(v: unknown): number | null {
+  if (v === null) return null;
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 100) broken();
+  return v;
+}
+
+const RESULTS: readonly ChapterResult[] = ['perfect', 'gehaald', 'mislukt'];
+
+function readSeason(v: unknown): Season | null {
+  if (v === null) return null;
+  if (!isRecord(v) || !Array.isArray(v.results)) broken();
+  const results = v.results.map((r: unknown) => (RESULTS.includes(r as ChapterResult) ? (r as ChapterResult) : broken()));
+  return {
+    villain: num(v, 'villain', 0, 9999),
+    places: readUsed(v.places),
+    figures: readUsed(v.figures),
+    chapter: num(v, 'chapter', 0, CHAPTERS),
+    meter: num(v, 'meter', 0, METER_MAX),
+    clues: num(v, 'clues', 0, CHAPTERS),
+    results,
+    momentDone: bool(v, 'momentDone'),
+    leadRolls: num(v, 'leadRolls', 0, MAX_LEAD_FROM_ROLLS),
+    goalMet: bool(v, 'goalMet'),
+    hearts: readNullableCount(v.hearts),
+    heartsStart: readNullableCount(v.heartsStart),
+    finished: bool(v, 'finished'),
+  };
+}
+
 function readGame(v: unknown): Game {
   if (!isRecord(v) || !Array.isArray(v.heroes)) broken();
   const heroes = v.heroes.map(readHero);
@@ -128,5 +170,8 @@ function readGame(v: unknown): Game {
     lastFileSave: last,
     opening: readOpening(v.opening),
     usedOpenings: readUsed(v.usedOpenings),
+    season: readSeason(v.season),
+    usedVillains: readUsed(v.usedVillains),
+    sessionMode: readMode(v.sessionMode),
   };
 }

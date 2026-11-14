@@ -2,6 +2,7 @@
 // bewaren (automatisch en als bestand) gebeurt elders.
 
 import { isListedPower } from '../data/ideas';
+import { addLead, advanceChapter, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
 
 export const MAX_HEROES = 6;
 export const START_FRIES = 3;
@@ -43,14 +44,22 @@ export interface Game {
   opening: number | null;
   /** Beginscènes die al geweest zijn (pas als alles geweest is, komen ze terug). */
   usedOpenings: number[];
+  /** Het lopende (of laatst gespeelde) seizoen. */
+  season: Season | null;
+  /** Slechteriken die al een seizoen kregen (komen pas terug als ze allemaal geweest zijn). */
+  usedVillains: number[];
+  /** Wat er deze sessie gespeeld wordt: een hoofdstuk van het seizoen of een los avontuur. */
+  sessionMode: SessionMode | null;
 }
+
+export type SessionMode = 'seizoen' | 'los';
 
 export function newId(rng: () => number = Math.random): string {
   return `${Date.now().toString(36)}-${Math.floor(rng() * 1e9).toString(36)}`;
 }
 
 export function newGame(now: number = Date.now()): Game {
-  return { id: newId(), createdAt: now, updatedAt: now, session: 0, sessionActive: false, turn: 0, heroes: [], lastFileSave: null, opening: null, usedOpenings: [] };
+  return { id: newId(), createdAt: now, updatedAt: now, session: 0, sessionActive: false, turn: 0, heroes: [], lastFileSave: null, opening: null, usedOpenings: [], season: null, usedVillains: [], sessionMode: null };
 }
 
 export function emptyDraft(): HeroDraft {
@@ -188,6 +197,63 @@ export function chooseOpening(game: Game, count: number, rng: () => number = Mat
   game.opening = pick;
   if (!game.usedOpenings.includes(pick)) game.usedOpenings.push(pick);
   touch(game);
+}
+
+/** Kan er een seizoen verder gespeeld worden (begonnen en nog niet uit)? */
+export function seasonInProgress(game: Game): boolean {
+  return game.season !== null && !game.season.finished;
+}
+
+/** Na startSession: deze sessie is een hoofdstuk van het seizoen. Start zo nodig een nieuw seizoen,
+ *  gaat naar het volgende hoofdstuk als het vorige beslissende moment gespeeld is, of start de finale. */
+export function beginSeasonSession(game: Game, counts: ContentCounts, rng: () => number = Math.random): void {
+  if (!game.season || game.season.finished) {
+    game.season = newSeason(game.usedVillains, counts, rng);
+    if (game.usedVillains.length >= counts.villains) game.usedVillains = [];
+    game.usedVillains.push(game.season.villain);
+  } else {
+    advanceChapter(game.season);
+  }
+  if (isFinale(game.season)) startFinale(game.season, presentHeroes(game).length);
+  game.sessionMode = 'seizoen';
+  touch(game);
+}
+
+export function beginLooseSession(game: Game): void {
+  game.sessionMode = 'los';
+  touch(game);
+}
+
+function requireSeason(game: Game): Season {
+  if (!game.season) throw new Error('Er loopt geen seizoen');
+  return game.season;
+}
+
+/** Een geslaagde gewone worp in een seizoenssessie. Geeft true terug als dat een voorsprong-ster opleverde. */
+export function recordSuccessForLead(game: Game): boolean {
+  if (game.sessionMode !== 'seizoen' || !game.season) return false;
+  const added = addLead(game.season);
+  if (added) touch(game);
+  return added;
+}
+
+export function setGoalMet(game: Game, met: boolean): void {
+  requireSeason(game).goalMet = met;
+  touch(game);
+}
+
+/** Beslissend moment van het huidige hoofdstuk afronden. */
+export function recordMoment(game: Game, successes: number): ChapterResult {
+  const result = resolveMoment(requireSeason(game), successes, rollerCount(presentHeroes(game).length));
+  touch(game);
+  return result;
+}
+
+/** Eén finaleronde afronden. Geeft true terug als de slechterik verslagen is. */
+export function recordFinaleRound(game: Game, successes: number): boolean {
+  const won = finaleRound(requireSeason(game), successes);
+  touch(game);
+  return won;
 }
 
 export function endSession(game: Game): void {

@@ -98,7 +98,7 @@ Nieuwe namen in dezelfde toon mogen er altijd bij. Deze wereldnamen zijn **geen 
 
 Bij **"Nieuw seizoen"** kiest de app in het geheim:
 1. **De slechterik** (uit een lijst), met zijn **doel**, zijn **handlanger** en een **geheime zwakte**
-2. Zijn **plan in 4 stappen**: elke sessie draait rond één stap
+2. Zijn **plan in 3 stappen + finale** (beslist): elke sessie draait rond één stap, de 4e sessie is de finale
 3. **3 sleutelplaatsen** en **3 terugkerende figuren** (bondgenoten, sukkels, verraders?)
 4. **Aanwijzingen** over de zwakte, verspreid over de sessies. Wie ze verzamelt, staat sterker in de finale.
 
@@ -107,6 +107,7 @@ Elke **sessie** = één hoofdstuk:
 - 3–4 scènes uit getagde bouwstenen die passen bij de huidige planstap of plaats
 - Een **cliffhanger** op het einde
 - De **Slechterik-meter** (0–6) bepaalt hoe zwaar de finale wordt, maar de finale blijft winbaar
+- Uitgewerkt in blok 4 (beslissend moment, voorsprong, finale met levens): zie de bouwblokkentabel en de handleiding
 
 Alles wordt opgeslagen op de tablet (met exportknop als back-up).
 
@@ -143,6 +144,7 @@ Alles wordt opgeslagen op de tablet (met exportknop als back-up).
 | 2 | **App-skelet**: aanmaakscherm (1–6 personages), spelers toevoegen of weglaten per sessie, beurtvolgorde, dobbelsteen (app + echte invoeren), frietjes, **bewaren/laden via bestand**. ✅ Gebouwd 2026-11-14: 32 unit-tests en 28 browserchecks groen (ook productiebuild + CSP). Spelbestand = `.txt` (het deelmenu van Android aanvaardt geen `.json`). Samen proberen (helper) zit al in het dobbelvenster. ⏳ Wacht op een test op de tablet | Spel bewaren → app wissen → bestand laden → alles terug |
 | 3 | **Orakel** + gekke-prikkeltabellen — de **Pruttelpot** (toverpot met gezicht), zotte prikkel (20×20 woorden), **Eidastinkt!**-voorvallen (verborgen inhoud via sub-agent, eerste test van het spoilermechanisme). ✅ Gebouwd 2026-11-14: 40 verborgen voorvallen, 52 unit-tests + browsertest groen, live op GitHub Pages. ⏳ Wacht op een test aan tafel | Een volledige "vrije" scène spelen met alleen het orakel |
 | 3b | **Beginscènes** (tussenoplossing tot blok 4–5): 30 verborgen beginscènes via sub-agent, één per sessie, "Andere beginscène", nooit herhaald tot alle 30 geweest zijn. Spelbestand → versie 3. Screenshots in de browsertest maken verborgen tekst wazig | Sessie starten → beginscène voorlezen → spelen met de Pruttelpot |
+| 4 ✅ | Gebouwd 2026-11-14 met **testinhoud**: seizoen = 3 hoofdstukken + finale; los avontuur blijft kiesbaar; beslissend moment met groepsworp (+ bondgenoot bij 1–2 spelers); **voorsprong** (geslaagde worpen max. 2 + "doel gehaald" 1, elke ster = succes) zodat een goede avond niet op het einde mislukt door pech; meter altijd zichtbaar; finale met levens, altijd winbaar. Spelbestand → versie 4. 89 unit-tests + browsertest met een volledig seizoen groen. Verhaalteksten krijgen class `story-text` (wazig in testscreenshots) | Volledig testseizoen gespeeld |
 | 4 | **Seizoen-generator** + Slechterik-meter (met testinhoud) | Nieuw seizoen → 4 samenhangende sessies, meter werkt |
 | 5 | **Sessieverloop**: scènes, opdrachten, rugzak/voorwerpen, pech-toestanden | Een volledige testsessie doorlopen |
 | 5b | **Groei**: level-up-kaarten, sterren + winkeltje, titels, maatjes, voorwerp-upgrades, gastpersonages, schaling van de slechterik | Na een testsessie level-up kiezen, en een gast start op groepsniveau |

@@ -17,7 +17,10 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
 - **Werkwijze verborgen inhoud**: sub-agent schrijft JSON naar een map BUITEN de repo (scratchpad) →
   `node scripts/encode-content.mjs <json> <naam>` → `src/content/<naam>.data.ts` (base64) → leesbare JSON verwijderen.
   Nooit `*.data.ts` decoderen, tonen of in screenshots vastleggen; tests controleren enkel vorm en aantallen.
-  Toegang in code via `src/content/index.ts`.
+  Toegang in code via `src/content/index.ts` (beginscènes, Eidastinkt) en `src/content/season-view.ts` (seizoenen).
+  Vorm van de seizoensinhoud: `src/content/season-content.ts`. `seizoenen.data.ts` bevat nu **testinhoud** (`test: true`);
+  in blok 7 vervangt een sub-agent die door het echte verhaal (zelfde vorm, `test` weglaten).
+- Elke verhaaltekst in de UI krijgt class `story-text`: de browsertest maakt die wazig in screenshots.
 - **Geen AI** in de app, **alles gratis**, werkt **offline**. CSP `connect-src 'none'` in de build nooit verwijderen.
 - Bewaren = **spelbestand** (deelmenu Android / download) met versienummer; de browser-kopie is enkel een vangnet.
   Formaat wijzigen → `SAVE_VERSION` verhogen en een stap toevoegen in `migrate()` (oude bestanden moeten blijven werken).
@@ -33,7 +36,9 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
 - `src/main.ts` — controller (open spel, schermwissel, bewaren). `src/app.ts` — gedeelde types + bovenbalk.
 - `src/game/` — pure spellogica met tests: `state.ts` (helden, sessies, beurt, frietjes), `dice.ts` (dobbelregels),
   `save.ts` (spelbestand + controle + migratie).
-- `src/screens/` — `home`, `heroes`, `editor` (aanmaakscherm), `table` (speeltafel), `dice` (dobbelvenster).
+- `src/screens/` — `home`, `heroes`, `editor` (aanmaakscherm), `table` (speeltafel), `dice` (dobbelvenster, ook groepsworp),
+  `oracle` (Pruttelpot, prikkel, Eidastinkt), `season` (meter, hoofdstuk, beslissend moment, finale).
+- `src/game/season.ts` — seizoensregels (pure functies + tests).
 - `src/platform/file.ts` — delen/downloaden/inlezen. `src/storage/autosave.ts` — reservekopie in localStorage.
 - `src/ui/` — `dom.ts` (helpers + SVG-iconen), `dialog.ts` (eigen dialoog + meldingen).
 - `print/` — printbare regelkaart en heldenblad (los van de app; gebruiken nog Google Fonts).

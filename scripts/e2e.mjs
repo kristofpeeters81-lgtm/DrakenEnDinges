@@ -44,7 +44,7 @@ await page.evaluateOnNewDocument(() => {
   // Spoilerregel: verborgen inhoud wazig maken, zodat ze nooit leesbaar in een screenshot staat.
   document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
-    style.textContent = '.opening-text, .opening-title, .eida-event { filter: blur(7px) !important; }';
+    style.textContent = '.opening-text, .opening-title, .eida-event, .story-text, .chapter-title { filter: blur(7px) !important; }';
     document.head.appendChild(style);
   });
 });
@@ -58,6 +58,59 @@ const click = async (selector) => {
 };
 const text = (selector) => page.$eval(selector, (el) => el.textContent ?? '');
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const waitDialog = (needle) =>
+  page.waitForFunction((n) => !document.getElementById('dialog').hidden && document.getElementById('dialog-text').textContent.includes(n), {}, needle);
+const answer = async (needle, value) => {
+  await waitDialog(needle);
+  await click(`#dialog-buttons [data-value="${value}"]`);
+  // Gesloten, of meteen een volgende vraag (die opent soms in hetzelfde moment).
+  await page.waitForFunction(
+    (n) => document.getElementById('dialog').hidden || !document.getElementById('dialog-text').textContent.includes(n),
+    {},
+    needle,
+  );
+};
+
+async function startSessionAs(kind) {
+  await click('[data-action="start"]');
+  await answer('Wat spelen', kind);
+  await page.waitForSelector('.turn-banner');
+}
+
+async function stopSessionLater() {
+  await click('[data-action="stop"]');
+  await answer('stoppen', 'yes');
+  await answer('bewaren', 'later');
+  await page.waitForSelector('.hero-card');
+}
+
+async function realRollInPanel(value) {
+  await click('[data-action="real"]');
+  await page.waitForSelector('.dice-panel.mode-enter');
+  await click(`[data-action="pip"][data-id="${value}"]`);
+  await page.waitForSelector('.dice-panel.mode-result');
+  await click('.dice-panel [data-action="close"].btn.big');
+  await page.waitForSelector('#overlay', { hidden: true });
+}
+
+/** Beslissend moment of finaleronde: elke held rolt de gegeven waarde, de bondgenoot rolt in de app. */
+async function playGroup(value) {
+  while (await page.$('.rollers [data-action="group-roll"]')) {
+    await click('.rollers [data-action="group-roll"]');
+    await realRollInPanel(value);
+  }
+  if (await page.$('.rollers [data-action="ally-roll"]')) await click('.rollers [data-action="ally-roll"]');
+}
+
+async function playMoment(goal, value) {
+  await click('[data-action="moment-start"]');
+  await answer('beslissende moment', 'yes');
+  await answer('doel', goal);
+  await page.waitForSelector('.rollers');
+  await playGroup(value);
+  await page.waitForSelector('.moment.done');
+}
 
 async function fill(field, value) {
   const sel = `input[data-field="${field}"]`;
@@ -125,8 +178,7 @@ try {
   await shot('helden-overzicht');
 
   console.log('Sessie en dobbelen');
-  await click('[data-action="start"]');
-  await page.waitForSelector('.turn-banner');
+  await startSessionAs('los');
   check((await text('.turn-name')) === hero1, 'held 1 is eerst aan de beurt');
   check((await page.$$('.table-card')).length === 2, 'enkel meespelende helden op tafel');
 
@@ -269,7 +321,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 3, 'bestand heeft app-naam en versie (3)');
+  check(saved.app === 'draken-en-dinges' && saved.version === 4, 'bestand heeft app-naam en versie (4)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -307,6 +359,69 @@ try {
   const friesAfter = await page.$$eval('.table-card .fries-label b', (els) => els.map((e) => e.textContent));
   check(friesAfter.join(',') === '2,3', `frietjes bewaard gebleven (${friesAfter.join(',')})`);
 
+  console.log('Seizoen (testinhoud)');
+  await stopSessionLater();
+  await startSessionAs('seizoen');
+  await page.waitForSelector('.season');
+  check((await page.$('.opening')) === null, 'in een seizoen geen losse beginscène');
+  check((await page.$('.test-badge')) !== null, 'testinhoud is herkenbaar als TESTVERHAAL');
+  check((await text('.chapter-label')).includes('Hoofdstuk 1 van 3'), 'seizoen start bij hoofdstuk 1');
+  check((await text('.meter b')) === '0/6', 'Slechterik-meter start op 0');
+  await shot('seizoen-hoofdstuk-1');
+
+  // Geslaagde gewone worp → voorsprong-ster
+  await click('.turn-banner [data-action="roll"]');
+  await realRollInPanel(6);
+  check((await page.$$('.lead .star.on')).length === 1, 'geslaagde worp geeft een voorsprong-ster');
+
+  // Beslissend moment: doel gehaald, maar alle worpen mislukken → toch gehaald dankzij de voorsprong
+  await playMoment('yes', 1);
+  check((await page.$('.moment.done.ok')) !== null, 'goede avond + slechte worpen op het einde = toch gehaald');
+  check((await text('.clue-count b')) === '1/3', 'gehaald: eerste aanwijzing gevonden');
+  check((await text('.meter b')) === '0/6', 'gehaald: meter blijft op 0');
+  await shot('seizoen-moment-gehaald');
+
+  // Hoofdstuk 2: geen voorsprong, alles mislukt → meter +2
+  await stopSessionLater();
+  check((await text('[data-action="start"]')).includes('Start sessie'), 'nieuwe sessie na een afgerond hoofdstuk');
+  await startSessionAs('seizoen');
+  check((await text('.chapter-label')).includes('Hoofdstuk 2 van 3'), 'volgende sessie = hoofdstuk 2');
+  check((await page.$('.recap')) !== null, 'hoofdstuk 2 begint met "Vorige keer in Kakofonië"');
+  await playMoment('no', 1);
+  check((await page.$('.moment.done.nok')) !== null, 'zonder voorsprong en met slechte worpen: mislukt');
+  check((await text('.meter b')) === '2/6', 'mislukt: meter stijgt met 2');
+
+  // Hoofdstuk 3: alles gelukt
+  await stopSessionLater();
+  await startSessionAs('seizoen');
+  check((await text('.chapter-label')).includes('Hoofdstuk 3 van 3'), 'hoofdstuk 3');
+  await playMoment('yes', 6);
+  check((await text('.clue-count b')) === '2/3', 'tweede aanwijzing');
+
+  // Finale: rondes tot de slechterik verslagen is
+  await stopSessionLater();
+  await startSessionAs('seizoen');
+  check((await text('.chapter-label')).includes('finale'), 'na 3 hoofdstukken: de finale');
+  const heartsStart = (await page.$$('.heart.full')).length;
+  check(heartsStart >= 1, `de slechterik heeft ${heartsStart} ${heartsStart === 1 ? 'leven' : 'levens'}`);
+  await shot('seizoen-finale');
+  let rounds = 0;
+  while (!(await page.$('.moment.won')) && rounds < 10) {
+    await click('[data-action="finale-round"]');
+    await page.waitForSelector('.rollers');
+    await playGroup(rounds === 0 ? 1 : 6);
+    await page.waitForFunction(() => !document.querySelector('.rollers'));
+    rounds++;
+  }
+  check((await page.$('.moment.won')) !== null, `finale gewonnen na ${rounds} rondes (ook na een mislukte eerste ronde)`);
+  await shot('seizoen-gewonnen');
+  await stopSessionLater();
+  await click('[data-action="start"]');
+  await waitDialog('Wat spelen');
+  const labels = await page.$$eval('#dialog-buttons button', (els) => els.map((e) => e.textContent));
+  check(labels.some((l) => l.includes('Nieuw seizoen')), 'na een gewonnen seizoen: "Nieuw seizoen"');
+  await click('#dialog-buttons [data-value="cancel"]');
+
   console.log('Kapot bestand');
   const broken = path.join(DOWNLOADS, 'kapot.txt');
   fs.writeFileSync(broken, 'dit is geen spel');
@@ -320,7 +435,8 @@ try {
   console.log('Gsm-formaat');
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
   await click('[data-action="continue"]');
-  await page.waitForSelector('.turn-banner');
+  await page.waitForSelector('.hero-card');
+  await startSessionAs('seizoen');
   await shot('gsm-speeltafel');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   check(!overflow, 'geen horizontaal scrollen op gsm');

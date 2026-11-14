@@ -17,6 +17,7 @@ import {
 import { actionOf, BOLT_ICON, DICE_ICON, escapeHtml, FRY_BAG_SVG, frySvg, POT_SVG } from '../ui/dom';
 import { ask, confirmDialog, toast } from '../ui/dialog';
 import { openDice } from './dice';
+import { handleSeasonAction, seasonBlock } from './season';
 import { openEidastinkt, openOracle, openPrikkel, oracleHistory } from './oracle';
 import { getOpening, openingCount } from '../content';
 
@@ -114,7 +115,7 @@ export function renderTable(app: App): void {
             </div>`
           : ''
       }
-      ${openingCard(game.opening)}
+      ${game.sessionMode === 'seizoen' ? seasonBlock(app) : openingCard(game.opening)}
       <section class="story-tools">
         <div class="story-pot">${POT_SVG}</div>
         <div class="story-main">
@@ -137,6 +138,7 @@ export function renderTable(app: App): void {
     const hit = actionOf(e);
     if (!hit) return;
     try {
+      if (await handleSeasonAction(app, hit.action, hit.id)) return;
       switch (hit.action) {
         case 'heroes':
           app.go({ name: 'heroes' });

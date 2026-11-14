@@ -30,6 +30,29 @@
 - **Gebruiken** bij de kracht: zet ze op "gebruikt" voor deze sessie (nog eens tikken = terugzetten).
 - Elke nieuwe sessie: iedereen weer 3 frietjes en een ongebruikte kracht.
 
+## Seizoen of los avontuur?
+Bij **Start sessie** kies je wat jullie vandaag spelen:
+- **Seizoen**: één slechterik met een plan in **3 hoofdstukken + finale** (4 speelavonden). Zolang het echte verhaal
+  er nog niet is, staat er **(testverhaal)** bij: speel dan met je dochter liever een los avontuur.
+- **Los avontuur**: één avond met een beginscène (zie hieronder). Handig met een gast of voor een korte avond.
+
+### Hoe een seizoen werkt
+- Bovenaan staat het seizoen: de **Slechterik-meter** (0–6), jullie **voorsprong** (★) en de gevonden **aanwijzingen**.
+- Elk hoofdstuk toont *Vorige keer in Kakofonië…*, wat de slechterik nu van plan is, waar het gebeurt, wie er rondloopt
+  en **Jullie doel vandaag**. Speel vrij, met de Pruttelpot.
+- **Voorsprong**: elke geslaagde worp tijdens het hoofdstuk geeft een ster (max. 2). Een goede avond telt dus mee.
+- **Naar het beslissende moment** (als jullie klaar zijn): de app vraagt eerlijk of het doel gehaald is (ja = extra ster).
+  Dan rolt elke held één keer (4 of meer). Speel je met 1 of 2, dan rolt er een **bondgenoot** mee.
+  Elke ster telt als een succes.
+  - **Perfect** (alles gelukt): meter −1 én een aanwijzing.
+  - **Gelukt**: een aanwijzing.
+  - **Mislukt**: meter +2.
+- Daarna: **Stop sessie** en bewaren. Volgende keer gaat het verder met het volgende hoofdstuk.
+  Stopte je vóór het beslissende moment, dan speel je hetzelfde hoofdstuk verder.
+- **Finale**: de slechterik heeft levens ♥ (meer bij een hoge meter, minder dankzij aanwijzingen; met 2 aanwijzingen
+  kennen jullie ook zijn zwakte). Elke ronde rolt iedereen één keer; elk succes kost hem een leven.
+  Rondes tot hij verslagen is: de finale is **altijd** te winnen.
+
 ## Beginscène
 - Bij **Start sessie** kiest de app een **beginscène**: lees ze hardop voor, daarna nemen jullie het over.
   Er zijn er 30; niemand kent ze op voorhand. Een beginscène komt pas terug als ze alle 30 geweest zijn.

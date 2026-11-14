@@ -4,6 +4,10 @@ import {
   addFry,
   addHero,
   canRoll,
+  beginSeasonSession,
+  recordFinaleRound,
+  recordMoment,
+  seasonInProgress,
   chooseOpening,
   currentHero,
   eatFry,
@@ -193,6 +197,61 @@ describe('één worp per beurt', () => {
     expect(canRoll(g, b.id)).toBe(false);
     g.sessionActive = false;
     expect(canRoll(g, a.id)).toBe(false);
+  });
+});
+
+describe('seizoen in het spel', () => {
+  const counts = { villains: 3, places: 6, figures: 4 };
+
+  function playing(n: number) {
+    const g = newGame();
+    for (let i = 0; i < n; i++) addHero(g, draft(`H${i}`));
+    startSession(g);
+    return g;
+  }
+
+  it('een heel seizoen: 3 hoofdstukken, dan finale tot de slechterik verslagen is', () => {
+    const g = playing(3);
+    beginSeasonSession(g, counts);
+    expect(g.sessionMode).toBe('seizoen');
+    expect(g.usedVillains).toEqual([g.season?.villain]);
+    for (let ch = 0; ch < 3; ch++) {
+      expect(g.season?.chapter).toBe(ch);
+      recordMoment(g, 0); // telkens mislukt → meter 6
+      startSession(g);
+      beginSeasonSession(g, counts);
+    }
+    expect(g.season?.chapter).toBe(3);
+    expect(g.season?.meter).toBe(6);
+    expect(g.season?.hearts).toBe(5);
+    let rounds = 0;
+    while (!recordFinaleRound(g, 1)) rounds++;
+    expect(rounds).toBe(4);
+    expect(seasonInProgress(g)).toBe(false);
+  });
+
+  it('sessie gestopt vóór het beslissende moment: volgende keer hetzelfde hoofdstuk', () => {
+    const g = playing(2);
+    beginSeasonSession(g, counts);
+    startSession(g);
+    beginSeasonSession(g, counts);
+    expect(g.season?.chapter).toBe(0);
+  });
+
+  it('na een afgelopen seizoen komt er een nieuwe slechterik', () => {
+    const g = playing(2);
+    beginSeasonSession(g, counts);
+    const first = g.season?.villain;
+    if (g.season) g.season.finished = true;
+    beginSeasonSession(g, counts);
+    expect(g.season?.villain).not.toBe(first);
+    expect(g.usedVillains.length).toBe(2);
+  });
+
+  it('met 1 held telt de bondgenoot mee bij het beslissende moment', () => {
+    const g = playing(1);
+    beginSeasonSession(g, counts);
+    expect(recordMoment(g, 2)).toBe('perfect');
   });
 });
 

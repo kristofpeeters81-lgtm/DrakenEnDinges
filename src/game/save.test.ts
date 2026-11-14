@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { POWERS } from '../data/ideas';
 import { APP_ID, parseGame, saveFileName, SaveError, serializeGame, SAVE_VERSION } from './save';
-import { addHero, emptyDraft, newGame, startSession } from './state';
+import { addHero, beginSeasonSession, emptyDraft, newGame, recordMoment, startSession } from './state';
 
 function sampleGame() {
   const g = newGame(1000);
@@ -71,6 +71,28 @@ describe('spelbestand', () => {
     const loaded = parseGame(serializeGame(g));
     expect(loaded.opening).toBe(4);
     expect(loaded.usedOpenings).toEqual([2, 4]);
+  });
+
+  it('een bestand van versie 3 krijgt lege seizoensgegevens', () => {
+    const raw = JSON.parse(serializeGame(sampleGame())) as { version: number; game: Record<string, unknown> };
+    raw.version = 3;
+    delete raw.game.season;
+    delete raw.game.usedVillains;
+    delete raw.game.sessionMode;
+    const loaded = parseGame(JSON.stringify(raw));
+    expect(loaded.season).toBeNull();
+    expect(loaded.usedVillains).toEqual([]);
+    expect(loaded.sessionMode).toBe('los');
+  });
+
+  it('bewaart een lopend seizoen volledig', () => {
+    const g = sampleGame();
+    beginSeasonSession(g, { villains: 3, places: 6, figures: 4 });
+    recordMoment(g, 1);
+    const loaded = parseGame(serializeGame(g));
+    expect(loaded.season).toEqual(g.season);
+    expect(loaded.usedVillains).toEqual(g.usedVillains);
+    expect(loaded.sessionMode).toBe('seizoen');
   });
 
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {

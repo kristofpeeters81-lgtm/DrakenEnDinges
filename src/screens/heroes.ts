@@ -2,9 +2,41 @@
 
 import { requireGame, saveButton, topbar, type App } from '../app';
 import { openingCount } from '../content';
-import { chooseOpening, hasUnsavedChanges, MAX_HEROES, presentHeroes, removeHero, setPresent, startSession, type Hero } from '../game/state';
+import { isTestContent, seasonCounts } from '../content/season-view';
+import { CHAPTERS } from '../game/season';
+import {
+  beginLooseSession,
+  beginSeasonSession,
+  chooseOpening,
+  hasUnsavedChanges,
+  MAX_HEROES,
+  presentHeroes,
+  removeHero,
+  setPresent,
+  startSession,
+  type Game,
+  type Hero,
+  type SessionMode,
+} from '../game/state';
 import { actionOf, escapeHtml } from '../ui/dom';
-import { confirmDialog, toast } from '../ui/dialog';
+import { ask, confirmDialog, toast } from '../ui/dialog';
+import { resetSeasonUi } from './season';
+
+/** Vraagt wat er vandaag gespeeld wordt: verder in het seizoen (of een nieuw) of een los avontuur. */
+async function chooseSessionKind(game: Game): Promise<SessionMode | null> {
+  const s = game.season;
+  let label = 'Nieuw seizoen';
+  if (s && !s.finished) {
+    const ch = s.momentDone ? s.chapter + 1 : s.chapter;
+    label = ch >= CHAPTERS ? 'Verder: de finale!' : `Verder: hoofdstuk ${ch + 1}`;
+  }
+  const choice = await ask('Wat spelen jullie vandaag?', [
+    { label: 'Annuleer', value: 'cancel' },
+    { label: 'Los avontuur (beginscène)', value: 'los' },
+    { label: isTestContent() ? `${label} (testverhaal)` : label, value: 'seizoen', primary: true },
+  ]);
+  return choice === 'seizoen' || choice === 'los' ? choice : null;
+}
 
 function heroCard(hero: Hero): string {
   return `
@@ -87,8 +119,16 @@ export function renderHeroes(app: App): void {
         }
         case 'start':
           if (!game.sessionActive) {
+            const kind = await chooseSessionKind(game);
+            if (!kind) return;
             startSession(game);
-            chooseOpening(game, openingCount());
+            resetSeasonUi();
+            if (kind === 'seizoen') {
+              beginSeasonSession(game, seasonCounts());
+            } else {
+              beginLooseSession(game);
+              chooseOpening(game, openingCount());
+            }
           }
           app.changed();
           app.go({ name: 'table' });
