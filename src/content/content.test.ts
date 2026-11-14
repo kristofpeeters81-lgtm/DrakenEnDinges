@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { decodeContent, isStringList } from './codec';
-import { drawEidastinkt, eidastinktCount, getOpening, openingCount } from './index';
+import { drawEidastinkt, drawItem, eidastinktCount, getItem, getOpening, itemCount, openingCount } from './index';
 import { chapterView, finaleView, seasonCounts } from './season-view';
 import { CHAPTERS, MOMENT_SCENE } from '../game/season';
 
@@ -43,7 +43,7 @@ describe('verborgen inhoud', () => {
     for (let v = 0; v < c.villains; v++) {
       const season = {
         villain: v, places: [0, 1, 2, 3], figures: [0, 1, 2], chapter: 0, meter: 0, clues: 0, results: [],
-        momentDone: false, scene: 0, leadRolls: 0, goalMet: false, hearts: null, heartsStart: null, finished: false,
+        momentDone: false, scene: 0, rewardTaken: false, leadRolls: 0, goalMet: false, hearts: null, heartsStart: null, finished: false,
       };
       for (let ch = 0; ch < CHAPTERS; ch++) {
         season.chapter = ch;
@@ -56,6 +56,24 @@ describe('verborgen inhoud', () => {
       if (/\{\w+\}/.test(finaleView(season).tekst)) problems++;
     }
     expect(problems).toBe(0);
+  });
+
+  it('voorwerpen: minstens 30, met naam en beschrijving, en nooit een dubbel trekken', () => {
+    const n = itemCount();
+    expect(n >= 30).toBe(true);
+    let bad = 0;
+    for (let i = 0; i < n; i++) {
+      const it = getItem(i);
+      if (!it || it.naam.trim().length === 0 || it.naam.length > 40 || it.beschrijving.length < 40) bad++;
+    }
+    expect(bad).toBe(0);
+    const owned: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const pick = drawItem(owned);
+      expect(pick !== null && !owned.includes(pick)).toBe(true);
+      if (pick !== null) owned.push(pick);
+    }
+    expect(drawItem(owned)).toBeNull();
   });
 
   it('er zijn genoeg Eidastinkt-voorvallen', () => {

@@ -3,7 +3,9 @@
 
 import { requireGame, type App } from '../app';
 import { diceNeeded, heroDiceCount, resolveRoll, rollDice, targetFor, type Difficulty, type Edge, type RollOutcome, type RollSetup } from '../game/dice';
-import { canRoll, currentHero, eatFry, findHero, markRolled, nextTurn, presentHeroes, recordSuccessForLead, type Hero } from '../game/state';
+import { canRoll, currentHero, eatFry, findHero, markRolled, nextTurn, presentHeroes, recordSuccessForLead, setPech, useItem, type Hero } from '../game/state';
+import { getItem } from '../content';
+import { isPechRoll, PECH, pickOther } from '../data/pech-opdrachten';
 import { actionOf, DICE_ICON, dieSvg, escapeHtml, FRY_BAG_SVG, $ } from '../ui/dom';
 import { toast } from '../ui/dialog';
 
@@ -27,6 +29,11 @@ interface DiceState {
   /** Hoe er gerold werd, zodat "opnieuw" op dezelfde manier gaat. */
   source: 'app' | 'echt';
   group: GroupRoll | null;
+  /** Gekozen voorwerp uit de rugzak (index), of null. */
+  itemSlot: number | null;
+  itemSpent: boolean;
+  /** Uitslag van de pech-dobbelsteen na een mislukte worp. */
+  pech: { die: number; text: string | null } | null;
 }
 
 function setupOf(s: DiceState): RollSetup {
@@ -73,6 +80,7 @@ function render(app: App, s: DiceState): void {
         ${seg('edge', 'gewoon', 'Gewoon', s.edge === 'gewoon')}
         ${seg('edge', 'slecht', '👎 Slecht in', s.edge === 'slecht', `<small>${escapeHtml(hero.badAt)}</small>`)}
       </div>
+      ${itemChoice(hero, s)}
       <p class="q">Hoe moeilijk?</p>
       <div class="segs">
         ${seg('diff', 'gewoon', 'Gewoon', s.difficulty === 'gewoon', '<small>4 of meer</small>')}
@@ -113,12 +121,21 @@ function render(app: App, s: DiceState): void {
       <div class="rolling">${diceRow(s, hero, helper, s.shown, null)}</div>`;
   } else if (s.outcome) {
     const o = s.outcome;
-    const canRetry = !o.success && hero.fries > 0;
-    const pech = o.success
-      ? ''
-      : helper
-        ? `<p class="pech">Allebei pech! ${escapeHtml(hero.name)} én ${escapeHtml(helper.name)} — kijk bij <b>Zotte pech</b> op de regelkaart.</p>`
-        : '<p class="pech">Oei. Misschien krijgt ge een <b>zotte pech</b> (regelkaart, achterkant).</p>';
+    const canRetry = !o.success && hero.fries > 0 && s.pech === null;
+    let pech = '';
+    if (!o.success && !s.group) {
+      if (s.pech === null) {
+        pech = `<p class="pech">${helper ? `Allebei in gevaar: ${escapeHtml(hero.name)} én ${escapeHtml(helper.name)}!` : 'Oei…'}
+          Probeer opnieuw met een frietje, of durf de pech-dobbelsteen: 1–3 = zotte pech, 4–6 = geluk gehad.</p>
+          <button class="btn pech-btn" data-action="pech-roll">${DICE_ICON} Rol de pech-dobbelsteen</button>`;
+      } else {
+        pech = `<div class="pech-result">${dieSvg(s.pech.die)}${
+          s.pech.text
+            ? `<p><b>Zotte pech${helper ? ' voor allebei' : ''}!</b> ${escapeHtml(s.pech.text)} <small>(tot de volgende scène)</small></p>`
+            : '<p><b>Geluk gehad!</b> Geen zotte pech deze keer.</p>'
+        }</div>`;
+      }
+    }
     body = `
       <p class="explain">${explain(s)}</p>
       ${diceRow(s, hero, helper, o.dice, o.keptIndex)}
@@ -128,7 +145,7 @@ function render(app: App, s: DiceState): void {
         ${
           canRetry
             ? `<button class="btn big fry-btn" data-action="retry">${FRY_BAG_SVG} Frietje opeten en opnieuw<small>nog ${hero.fries} ${hero.fries === 1 ? 'frietje' : 'frietjes'}</small></button>`
-            : !o.success
+            : !o.success && hero.fries <= 0
               ? '<p class="hint">Geen frietjes meer… Verdien er eentje met een opdracht!</p>'
               : ''
         }
@@ -140,6 +157,18 @@ function render(app: App, s: DiceState): void {
     <button class="btn ghost close-x" data-action="close" aria-label="Sluiten">✕</button>${body}</div>`;
 }
 
+/** Keuze om een voorwerp uit de rugzak te gebruiken (1× per sessie: telt als "goed in"). */
+function itemChoice(hero: Hero, s: DiceState): string {
+  const free = hero.items.map((it, slot) => ({ it, slot })).filter(({ it }) => !it.used);
+  if (free.length === 0) return '';
+  const name = (item: number): string => getItem(item)?.naam ?? 'Voorwerp';
+  return `<p class="q">Gebruikt ${escapeHtml(hero.name)} iets uit de rugzak? <small>(1× per sessie: telt als “goed in”)</small></p>
+    <div class="segs wrap">
+      ${seg('item', '', 'Nee', s.itemSlot === null)}
+      ${free.map(({ it, slot }) => seg('item', String(slot), `<span class="story-text">${escapeHtml(name(it.item))}</span>`, s.itemSlot === slot)).join('')}
+    </div>`;
+}
+
 function reducedMotion(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -147,6 +176,10 @@ function reducedMotion(): boolean {
 function finish(app: App, s: DiceState, dice: number[]): void {
   s.outcome = resolveRoll(setupOf(s), dice);
   s.mode = 'result';
+  if (s.itemSlot !== null && !s.itemSpent) {
+    useItem(requireGame(app), s.heroId, s.itemSlot);
+    s.itemSpent = true;
+  }
   // Slot meteen zetten (niet pas bij sluiten): zo helpt venster sluiten of de pagina verversen niet om opnieuw te rollen.
   if (!s.group) {
     const game = requireGame(app);
@@ -190,7 +223,7 @@ export function openDice(app: App, heroId: string, group: GroupRoll | null = nul
   }
   // Enkel wie aan de beurt is geeft na zijn worp de beurt door; een uitzonderlijke worp van iemand anders niet.
   const wasTurn = !group && currentHero(game)?.id === heroId;
-  const s: DiceState = { heroId, edge: 'gewoon', difficulty: 'gewoon', helperId: null, mode: 'setup', entered: [], shown: [], outcome: null, source: 'app', group };
+  const s: DiceState = { heroId, edge: 'gewoon', difficulty: 'gewoon', helperId: null, mode: 'setup', entered: [], shown: [], outcome: null, source: 'app', group, itemSlot: null, itemSpent: false, pech: null };
 
   const close = (): void => {
     overlay.hidden = true;
@@ -219,6 +252,23 @@ export function openDice(app: App, heroId: string, group: GroupRoll | null = nul
       case 'helper':
         s.helperId = hit.id || null;
         break;
+      case 'item':
+        s.itemSlot = hit.id === '' ? null : Number(hit.id);
+        if (s.itemSlot !== null) s.edge = 'goed';
+        break;
+      case 'pech-roll': {
+        if (s.pech !== null) break;
+        const die = rollDice(1)[0];
+        const hero = findHero(game, s.heroId);
+        const text = isPechRoll(die) ? pickOther(PECH, hero.pech ?? '') : null;
+        s.pech = { die, text };
+        if (text) {
+          setPech(game, s.heroId, text);
+          if (s.helperId) setPech(game, s.helperId, text);
+        }
+        app.changed();
+        break;
+      }
       case 'app-roll':
         appRoll(app, s);
         return;

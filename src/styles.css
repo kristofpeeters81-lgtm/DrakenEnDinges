@@ -1114,6 +1114,78 @@ small {
   margin-left: 6px;
 }
 
+.task-btn {
+  margin-top: 8px;
+}
+
+.task-btn .fry-bag {
+  width: 20px;
+  height: 26px;
+  vertical-align: middle;
+}
+
+.pech-now {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fef2f2;
+  border: 2px dashed var(--nok);
+  border-radius: 12px;
+  padding: 6px 10px;
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.pech-now .btn {
+  margin-left: 8px;
+  flex: none;
+}
+
+.backpack {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+
+.backpack .item {
+  display: inline-block;
+  background: #e0f2fe;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 1px 10px;
+  margin: 0 6px 6px 0;
+  font-size: 16px;
+}
+
+.backpack .item.used {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.btn.find {
+  background: #e0f2fe;
+}
+
+.reward-btn {
+  background: #e0f2fe;
+  margin: 6px 0;
+}
+
+.task-text,
+.find-name {
+  font-family: var(--title);
+  font-size: 34px;
+  line-height: 1.15;
+  margin: 14px auto;
+  max-width: 680px;
+}
+
+.find-text {
+  font-size: 24px;
+  max-width: 640px;
+  margin: 0 auto 8px;
+}
+
 .power {
   display: flex;
   align-items: center;
@@ -1325,6 +1397,35 @@ small {
 .pech {
   font-size: 20px;
   margin: 4px 0 0;
+}
+
+.pech-btn {
+  background: #fde2e2;
+  margin-top: 6px;
+}
+
+.pech-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fef2f2;
+  border-radius: 14px;
+  padding: 8px 14px;
+  margin: 8px auto 0;
+  max-width: 620px;
+  text-align: left;
+}
+
+.pech-result .die {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  margin-right: 12px;
+}
+
+.pech-result p {
+  margin: 0;
+  font-size: 21px;
 }
 
 .fry-btn {

@@ -106,6 +106,27 @@ describe('spelbestand', () => {
     expect(parseGame(JSON.stringify(raw)).season?.scene).toBe(2);
   });
 
+  it('een bestand van versie 5 krijgt lege rugzakken en geen pech', () => {
+    const raw = JSON.parse(serializeGame(sampleGame())) as { version: number; game: { heroes: Array<Record<string, unknown>> } };
+    raw.version = 5;
+    for (const h of raw.game.heroes) {
+      delete h.pech;
+      delete h.items;
+    }
+    const loaded = parseGame(JSON.stringify(raw));
+    expect(loaded.heroes.map((h) => h.items)).toEqual([[], []]);
+    expect(loaded.heroes.map((h) => h.pech)).toEqual([null, null]);
+  });
+
+  it('bewaart rugzak en pech', () => {
+    const g = sampleGame();
+    g.heroes[0].items = [{ item: 4, used: true }];
+    g.heroes[1].pech = 'kip';
+    const loaded = parseGame(serializeGame(g));
+    expect(loaded.heroes[0].items).toEqual([{ item: 4, used: true }]);
+    expect(loaded.heroes[1].pech).toBe('kip');
+  });
+
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {
     expect(saveFileName(new Date(2026, 10, 14, 20, 5))).toBe('Draken en Dinges - 2026-11-14 20.05.txt');
   });

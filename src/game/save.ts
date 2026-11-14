@@ -3,10 +3,10 @@
 // Oude bestanden moeten na app-updates blijven werken: verhoog SAVE_VERSION en voeg een stap toe in migrate().
 
 import { CHAPTERS, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, type ChapterResult, type Season } from './season';
-import { MAX_FRIES, MAX_HEROES, type Game, type Hero, type SessionMode } from './state';
+import { MAX_FRIES, MAX_HEROES, MAX_ITEMS, type Game, type Hero, type HeroItem, type SessionMode } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export class SaveError extends Error {}
 
@@ -42,6 +42,7 @@ function migrate(game: unknown, fromVersion: number): unknown {
   if (fromVersion < 3) g = v2ToV3(g);
   if (fromVersion < 4) g = v3ToV4(g);
   if (fromVersion < 5) g = v4ToV5(g);
+  if (fromVersion < 6) g = v5ToV6(g);
   return g;
 }
 
@@ -49,6 +50,14 @@ function migrate(game: unknown, fromVersion: number): unknown {
 /** Versie 3: beginscènes (welke nu, welke al geweest). Oude spellen: nog geen. */
 /** Versie 4: seizoenen. Oude spellen: nog geen seizoen; een lopende sessie was een los avontuur. */
 /** Versie 5: scènes in een hoofdstuk. Oud seizoen: begin van het hoofdstuk, of het moment als dat al gespeeld is. */
+/** Versie 6: zotte pech, rugzak en beloning. Oude helden: geen pech, lege rugzak; beloning telt als gegeven. */
+function v5ToV6(game: unknown): unknown {
+  if (!isRecord(game) || !Array.isArray(game.heroes)) return game;
+  const heroes = game.heroes.map((h: unknown) => (isRecord(h) ? { ...h, pech: null, items: [] } : h));
+  const season = isRecord(game.season) ? { ...game.season, rewardTaken: true } : game.season;
+  return { ...game, heroes, season };
+}
+
 function v4ToV5(game: unknown): unknown {
   if (!isRecord(game) || !isRecord(game.season)) return game;
   return { ...game, season: { ...game.season, scene: game.season.momentDone === true ? MOMENT_SCENE : 0 } };
@@ -95,6 +104,14 @@ function bool(o: Record<string, unknown>, key: string): boolean {
   return typeof v === 'boolean' ? v : broken();
 }
 
+function readItems(v: unknown): HeroItem[] {
+  if (!Array.isArray(v) || v.length > MAX_ITEMS) broken();
+  return v.map((it: unknown) => {
+    if (!isRecord(it)) broken();
+    return { item: num(it, 'item', 0, 9999), used: bool(it, 'used') };
+  });
+}
+
 function readHero(v: unknown): Hero {
   if (!isRecord(v)) broken();
   const goodAt = v.goodAt;
@@ -112,6 +129,8 @@ function readHero(v: unknown): Hero {
     fries: num(v, 'fries', 0, MAX_FRIES),
     powerUsed: bool(v, 'powerUsed'),
     rolled: bool(v, 'rolled'),
+    pech: v.pech === null ? null : str(v, 'pech'),
+    items: readItems(v.items),
   };
 }
 
@@ -153,6 +172,7 @@ function readSeason(v: unknown): Season | null {
     results,
     momentDone: bool(v, 'momentDone'),
     scene: num(v, 'scene', 0, MOMENT_SCENE),
+    rewardTaken: bool(v, 'rewardTaken'),
     leadRolls: num(v, 'leadRolls', 0, MAX_LEAD_FROM_ROLLS),
     goalMet: bool(v, 'goalMet'),
     hearts: readNullableCount(v.hearts),

@@ -3,6 +3,7 @@
 import { decodeContent, isStringList } from './codec';
 import { DATA as BEGINSCENES } from './beginscenes.data';
 import { DATA as EIDASTINKT } from './eidastinkt.data';
+import { DATA as VOORWERPEN } from './voorwerpen.data';
 
 export interface Opening {
   titel: string;
@@ -58,4 +59,38 @@ export function drawEidastinkt(rng: () => number = Math.random): string {
 /** Aantal voorvallen (voor tests, zonder de inhoud te tonen). */
 export function eidastinktCount(): number {
   return eidastinktEvents().length;
+}
+
+export interface ItemContent {
+  naam: string;
+  beschrijving: string;
+}
+
+function isItemList(v: unknown): v is ItemContent[] {
+  return (
+    Array.isArray(v) &&
+    v.every((o: unknown) => typeof o === 'object' && o !== null && typeof (o as ItemContent).naam === 'string' && typeof (o as ItemContent).beschrijving === 'string')
+  );
+}
+
+let items: ItemContent[] | null = null;
+
+function allItems(): ItemContent[] {
+  if (!items) items = decodeContent(VOORWERPEN, isItemList);
+  return items;
+}
+
+export function itemCount(): number {
+  return allItems().length;
+}
+
+export function getItem(index: number): ItemContent | null {
+  return allItems()[index] ?? null;
+}
+
+/** Kiest een voorwerp dat nog niemand heeft (null als alles al uitgedeeld is). */
+export function drawItem(owned: readonly number[], rng: () => number = Math.random): number | null {
+  const free: number[] = [];
+  for (let i = 0; i < allItems().length; i++) if (!owned.includes(i)) free.push(i);
+  return free.length > 0 ? free[Math.floor(rng() * free.length)] : null;
 }

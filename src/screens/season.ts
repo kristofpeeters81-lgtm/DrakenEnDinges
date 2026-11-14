@@ -14,7 +14,8 @@ import {
 } from '../content/season-view';
 import { rollDice } from '../game/dice';
 import { CHAPTERS, hasAlly, isFinale, leadTotal, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, MOMENT_TARGET, neededSuccesses, rollerCount, SCENES, type Season } from '../game/season';
-import { findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, setGoalMet, type Game } from '../game/state';
+import { findHero, nextScene, presentHeroes, recordFinaleRound, recordMoment, setGoalMet, takeReward, type Game } from '../game/state';
+import { openFind } from './tasks';
 import { ask, confirmDialog } from '../ui/dialog';
 import { DICE_ICON, dieSvg, escapeHtml } from '../ui/dom';
 import { openDice } from './dice';
@@ -120,6 +121,7 @@ function chapterCard(game: Game, season: Season): string {
     momentHtml = `<div class="moment done ${result === 'mislukt' ? 'nok' : 'ok'}">
       <p class="moment-result">${label}</p>
       <p class="moment-text story-text">${escapeHtml(text)}</p>
+      ${result !== 'mislukt' && !season.rewardTaken ? '<button class="btn big reward-btn" data-action="reward">Beloning: jullie vinden iets!</button>' : ''}
       <p class="hint">Dit hoofdstuk is klaar. Stop de sessie en bewaar. Volgende keer: <b>${next}</b>.</p>
     </div>`;
   } else if (r) {
@@ -278,6 +280,11 @@ export async function handleSeasonAction(app: App, action: string, id: string): 
       ideasOpenFor = '';
       app.changed();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return true;
+    case 'reward':
+      if (season.rewardTaken || !season.momentDone) return true;
+      if (await openFind(app, 'Beloning! Jullie vinden iets')) takeReward(game);
+      app.changed();
       return true;
     case 'moment-start':
       if (!(await confirmDialog('Klaar om te eindigen met het beslissende moment? Daarna is dit hoofdstuk voorbij.', 'Ja, nu!', 'Nog even spelen'))) return true;

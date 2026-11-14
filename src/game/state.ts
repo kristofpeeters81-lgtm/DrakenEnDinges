@@ -7,6 +7,13 @@ import { addLead, advanceChapter, advanceScene, finaleRound, isFinale, newSeason
 export const MAX_HEROES = 6;
 export const START_FRIES = 3;
 export const MAX_FRIES = 8;
+export const MAX_ITEMS = 6;
+
+/** Een voorwerp in de rugzak: nummer in de verborgen voorwerpenlijst + of het deze sessie al gebruikt is. */
+export interface HeroItem {
+  item: number;
+  used: boolean;
+}
 
 export interface Hero {
   id: string;
@@ -24,6 +31,9 @@ export interface Hero {
   powerUsed: boolean;
   /** Heeft al gerold sinds het begin van zijn laatste eigen beurt (slot tegen opnieuw rollen zonder frietje). */
   rolled: boolean;
+  /** Zotte pech van dit moment (tot de volgende scène), of null. */
+  pech: string | null;
+  items: HeroItem[];
 }
 
 export type HeroDraft = Pick<Hero, 'name' | 'player' | 'kind' | 'goodAt' | 'badAt' | 'power' | 'powerApproved'>;
@@ -108,7 +118,7 @@ export function addHero(game: Game, draft: HeroDraft): Hero {
   if (game.heroes.length >= MAX_HEROES) throw new Error(`Maximum ${MAX_HEROES} helden`);
   const errors = validateDraft(draft);
   if (errors.length > 0) throw new Error(errors[0]);
-  const hero: Hero = { id: newId(), ...clean(draft), present: true, fries: START_FRIES, powerUsed: false, rolled: false };
+  const hero: Hero = { id: newId(), ...clean(draft), present: true, fries: START_FRIES, powerUsed: false, rolled: false, pech: null, items: [] };
   game.heroes.push(hero);
   touch(game);
   return hero;
@@ -175,6 +185,8 @@ export function startSession(game: Game): void {
     hero.fries = START_FRIES;
     hero.powerUsed = false;
     hero.rolled = false;
+    hero.pech = null;
+    for (const it of hero.items) it.used = false;
   }
   touch(game);
 }
@@ -239,7 +251,18 @@ export function recordSuccessForLead(game: Game): boolean {
 
 export function nextScene(game: Game): void {
   advanceScene(requireSeason(game));
+  // Zotte pech duurt tot de volgende scène.
+  for (const hero of game.heroes) hero.pech = null;
   touch(game);
+}
+
+/** Beloning na een gelukt beslissend moment: één keer per hoofdstuk. */
+export function takeReward(game: Game): boolean {
+  const season = requireSeason(game);
+  if (!season.momentDone || season.rewardTaken || season.results[season.chapter] === 'mislukt') return false;
+  season.rewardTaken = true;
+  touch(game);
+  return true;
 }
 
 export function setGoalMet(game: Game, met: boolean): void {
@@ -300,6 +323,34 @@ export function addFry(game: Game, id: string): boolean {
   const hero = findHero(game, id);
   if (hero.fries >= MAX_FRIES) return false;
   hero.fries += 1;
+  touch(game);
+  return true;
+}
+
+export function setPech(game: Game, id: string, pech: string | null): void {
+  findHero(game, id).pech = pech;
+  touch(game);
+}
+
+/** Alle voorwerpen die iemand al heeft (om dubbels te vermijden). */
+export function ownedItems(game: Game): number[] {
+  return game.heroes.reduce<number[]>((acc, h) => acc.concat(h.items.map((i) => i.item)), []);
+}
+
+/** Stopt een voorwerp in de rugzak. False als de rugzak vol is of iemand het al heeft. */
+export function giveItem(game: Game, id: string, item: number): boolean {
+  const hero = findHero(game, id);
+  if (hero.items.length >= MAX_ITEMS || ownedItems(game).includes(item)) return false;
+  hero.items.push({ item, used: false });
+  touch(game);
+  return true;
+}
+
+/** Gebruikt een voorwerp (1× per sessie): de worp telt als "goed in". */
+export function useItem(game: Game, id: string, slot: number): boolean {
+  const it = findHero(game, id).items[slot];
+  if (!it || it.used) return false;
+  it.used = true;
   touch(game);
   return true;
 }

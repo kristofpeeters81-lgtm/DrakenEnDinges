@@ -33,6 +33,8 @@ export interface Season {
   results: ChapterResult[];
   /** Het beslissende moment van dit hoofdstuk is al gespeeld (volgende sessie = volgend hoofdstuk). */
   momentDone: boolean;
+  /** De beloning (een voorwerp) na een gelukt beslissend moment is al gegeven. */
+  rewardTaken: boolean;
   /** Huidige scène in het hoofdstuk (0 = begin, 1 = wending, 2 = beslissend moment). */
   scene: number;
   /** Voorsprong-sterren uit geslaagde worpen in dit hoofdstuk (0..MAX_LEAD_FROM_ROLLS). */
@@ -78,6 +80,7 @@ export function newSeason(usedVillains: readonly number[], counts: ContentCounts
     results: [],
     momentDone: false,
     scene: 0,
+    rewardTaken: false,
     leadRolls: 0,
     goalMet: false,
     hearts: null,
@@ -142,6 +145,7 @@ export function advanceChapter(season: Season): void {
   season.chapter += 1;
   season.momentDone = false;
   season.scene = 0;
+  season.rewardTaken = false;
   season.leadRolls = 0;
   season.goalMet = false;
 }

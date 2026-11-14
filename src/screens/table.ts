@@ -11,6 +11,7 @@ import {
   nextTurn,
   presentHeroes,
   setPowerUsed,
+  setPech,
   chooseOpening,
   type Hero,
 } from '../game/state';
@@ -19,7 +20,8 @@ import { ask, confirmDialog, toast } from '../ui/dialog';
 import { openDice } from './dice';
 import { handleSeasonAction, seasonBlock } from './season';
 import { openEidastinkt, openOracle, openPrikkel, oracleHistory } from './oracle';
-import { getOpening, openingCount } from '../content';
+import { getItem, getOpening, openingCount } from '../content';
+import { openFind, openTask } from './tasks';
 
 function fries(hero: Hero): string {
   let icons = '';
@@ -73,9 +75,26 @@ function heroCard(hero: Hero, isTurn: boolean): string {
         <span class="fries">${fries(hero)}</span>
         <span class="fry-buttons">
           <button class="btn icon small" data-action="eat" data-id="${hero.id}" ${hero.fries <= 0 ? 'disabled' : ''} title="Frietje opeten">−</button>
-          <button class="btn icon small" data-action="fry" data-id="${hero.id}" ${hero.fries >= MAX_FRIES ? 'disabled' : ''} title="Frietje verdiend">+</button>
+          <button class="btn icon small" data-action="fry" data-id="${hero.id}" ${hero.fries >= MAX_FRIES ? 'disabled' : ''} title="Frietje erbij (handmatig)">+</button>
         </span>
       </div>
+      <button class="btn small task-btn" data-action="task" data-id="${hero.id}" ${hero.fries >= MAX_FRIES ? 'disabled' : ''}>${FRY_BAG_SVG} Verdien een frietje</button>
+      ${
+        hero.pech
+          ? `<div class="pech-now"><span><b>Zotte pech:</b> ${escapeHtml(hero.pech)}</span>
+              <button class="btn icon small" data-action="pech-clear" data-id="${hero.id}" title="Pech voorbij">✕</button></div>`
+          : ''
+      }
+      ${
+        hero.items.length > 0
+          ? `<ul class="backpack" aria-label="Rugzak">${hero.items
+              .map(
+                (it) =>
+                  `<li class="item ${it.used ? 'used' : ''}" title="${it.used ? 'Deze sessie al gebruikt' : 'Nog te gebruiken deze sessie'}"><span class="story-text">${escapeHtml(getItem(it.item)?.naam ?? 'Voorwerp')}</span></li>`,
+              )
+              .join('')}</ul>`
+          : ''
+      }
       <div class="power ${hero.powerUsed ? 'used' : ''}">
         ${BOLT_ICON}<span class="power-text">${escapeHtml(hero.power)}</span>
         <button class="btn small ${hero.powerUsed ? 'ghost' : ''}" data-action="power" data-id="${hero.id}">
@@ -125,6 +144,7 @@ export function renderTable(app: App): void {
             <button class="btn big primary" data-action="oracle">Vraag de Pruttelpot</button>
             <button class="btn" data-action="prikkel">Zotte prikkel</button>
             <button class="btn eida" data-action="eida">Eidastinkt!</button>
+            <button class="btn find" data-action="find">Iets gevonden!</button>
           </div>
           ${oracleLog()}
         </div>
@@ -186,6 +206,16 @@ export function renderTable(app: App): void {
           break;
         case 'prikkel':
           openPrikkel(app);
+          break;
+        case 'task':
+          openTask(app, hit.id);
+          break;
+        case 'pech-clear':
+          setPech(game, hit.id, null);
+          app.changed();
+          break;
+        case 'find':
+          await openFind(app);
           break;
         case 'eida':
           openEidastinkt(app);

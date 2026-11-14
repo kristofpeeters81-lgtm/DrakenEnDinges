@@ -4,6 +4,12 @@ import {
   addFry,
   addHero,
   canRoll,
+  giveItem,
+  MAX_ITEMS,
+  nextScene,
+  setPech,
+  takeReward,
+  useItem,
   beginSeasonSession,
   recordFinaleRound,
   recordMoment,
@@ -252,6 +258,69 @@ describe('seizoen in het spel', () => {
     const g = playing(1);
     beginSeasonSession(g, counts);
     expect(recordMoment(g, 2)).toBe('perfect');
+  });
+});
+
+describe('rugzak, pech en beloning', () => {
+  const counts = { villains: 3, places: 6, figures: 4 };
+
+  it('voorwerpen: max. 6 per held, en nooit twee keer hetzelfde in de groep', () => {
+    const g = newGame();
+    const a = addHero(g, draft('A'));
+    const b = addHero(g, draft('B'));
+    expect(giveItem(g, a.id, 3)).toBe(true);
+    expect(giveItem(g, b.id, 3)).toBe(false);
+    for (let i = 10; i < 10 + MAX_ITEMS - 1; i++) giveItem(g, a.id, i);
+    expect(a.items.length).toBe(MAX_ITEMS);
+    expect(giveItem(g, a.id, 99)).toBe(false);
+  });
+
+  it('een voorwerp kan 1× per sessie gebruikt worden', () => {
+    const g = newGame();
+    const a = addHero(g, draft('A'));
+    giveItem(g, a.id, 1);
+    startSession(g);
+    expect(useItem(g, a.id, 0)).toBe(true);
+    expect(useItem(g, a.id, 0)).toBe(false);
+    startSession(g);
+    expect(useItem(g, a.id, 0)).toBe(true);
+  });
+
+  it('zotte pech verdwijnt bij de volgende scène en bij een nieuwe sessie', () => {
+    const g = newGame();
+    const a = addHero(g, draft('A'));
+    startSession(g);
+    beginSeasonSession(g, counts);
+    setPech(g, a.id, 'paars haar');
+    nextScene(g);
+    expect(a.pech).toBeNull();
+    setPech(g, a.id, 'kip');
+    startSession(g);
+    expect(a.pech).toBeNull();
+  });
+
+  it('beloning: enkel na een gelukt beslissend moment, en maar één keer', () => {
+    const g = newGame();
+    addHero(g, draft('A'));
+    addHero(g, draft('B'));
+    addHero(g, draft('C'));
+    startSession(g);
+    beginSeasonSession(g, counts);
+    expect(takeReward(g)).toBe(false);
+    recordMoment(g, 3);
+    expect(takeReward(g)).toBe(true);
+    expect(takeReward(g)).toBe(false);
+  });
+
+  it('geen beloning na een mislukt moment', () => {
+    const g = newGame();
+    addHero(g, draft('A'));
+    addHero(g, draft('B'));
+    addHero(g, draft('C'));
+    startSession(g);
+    beginSeasonSession(g, counts);
+    recordMoment(g, 0);
+    expect(takeReward(g)).toBe(false);
   });
 });
 

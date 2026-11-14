@@ -85,12 +85,20 @@ async function stopSessionLater() {
   await page.waitForSelector('.hero-card');
 }
 
-async function realRollInPanel(value) {
+async function realRollInPanel(value, { keepOpen = false } = {}) {
   await click('[data-action="real"]');
   await page.waitForSelector('.dice-panel.mode-enter');
-  await click(`[data-action="pip"][data-id="${value}"]`);
+  while (await page.$('.dice-panel.mode-enter')) await click(`[data-action="pip"][data-id="${value}"]`);
   await page.waitForSelector('.dice-panel.mode-result');
+  if (keepOpen) return;
   await click('.dice-panel [data-action="close"].btn.big');
+  await page.waitForSelector('#overlay', { hidden: true });
+}
+
+async function giveTo(heroName) {
+  await waitDialog('rugzak');
+  const index = await page.$$eval('#dialog-buttons button', (els, n) => els.findIndex((e) => e.textContent === n), heroName);
+  await page.$$eval('#dialog-buttons button', (els, i) => els[i].click(), index);
   await page.waitForSelector('#overlay', { hidden: true });
 }
 
@@ -325,7 +333,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 5, 'bestand heeft app-naam en versie (5)');
+  check(saved.app === 'draken-en-dinges' && saved.version === 6, 'bestand heeft app-naam en versie (6)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -385,14 +393,56 @@ try {
   check((await page.$('.ideas-list')) === null, 'ideeën klappen dicht bij een nieuwe scène');
   await shot('seizoen-wending');
 
-  // Geslaagde gewone worp → voorsprong-ster
+  // Iets gevonden → in de rugzak van wie aan de beurt is
+  const turnName = await text('.turn-name');
+  await click('[data-action="find"]');
+  await page.waitForSelector('.find-panel');
+  check((await text('.find-name')).length > 2, 'iets gevonden: de app toont een voorwerp (inhoud niet getoond)');
+  await giveTo(turnName);
+  await page.waitForSelector('.backpack .item');
+  check((await page.$$('.backpack .item')).length === 1, 'het voorwerp zit in de rugzak');
+
+  // Opdracht → frietje verdienen
+  const friesBefore = Number(await page.$eval('.table-card .fries-label b', (el) => el.textContent));
+  await click('.table-card [data-action="task"]');
+  await page.waitForSelector('.task-panel');
+  const task1 = await text('.task-text');
+  await click('.task-panel [data-action="other"]');
+  check((await text('.task-text')) !== task1, '"Andere opdracht" geeft een andere');
+  await click('.task-panel [data-action="done"]');
+  await page.waitForSelector('#overlay', { hidden: true });
+  check(Number(await page.$eval('.table-card .fries-label b', (el) => el.textContent)) === friesBefore + 1, 'opdracht gedaan: +1 frietje');
+
+  // Geslaagde worp mét voorwerp → telt als goed in, voorwerp gebruikt, voorsprong-ster
   await click('.turn-banner [data-action="roll"]');
+  await page.waitForSelector('.dice-panel.mode-setup');
+  await click('[data-action="item"][data-id="0"]');
+  check((await page.$('[data-action="edge"][data-id="goed"].active')) !== null, 'voorwerp gebruiken = de worp telt als "goed in"');
   await realRollInPanel(6);
+  check((await page.$$('.backpack .item.used')).length === 1, 'het voorwerp is deze sessie gebruikt');
   check((await page.$$('.lead .star.on')).length === 1, 'geslaagde worp geeft een voorsprong-ster');
+
+  // Mislukte worp → pech-dobbelsteen
+  await click('.turn-banner [data-action="roll"]');
+  await page.waitForSelector('.dice-panel.mode-setup');
+  await realRollInPanel(1, { keepOpen: true });
+  await click('[data-action="pech-roll"]');
+  await page.waitForSelector('.pech-result');
+  check((await page.$('[data-action="retry"]')) === null, 'na de pech-dobbelsteen geen frietje-herkansing meer');
+  const gotPech = (await text('.pech-result')).includes('Zotte pech');
+  await click('.dice-panel [data-action="close"].btn.big');
+  await page.waitForSelector('#overlay', { hidden: true });
+  check(((await page.$('.pech-now')) !== null) === gotPech, `pech-dobbelsteen: ${gotPech ? 'zotte pech staat op de kaart' : 'geluk gehad'}`);
 
   // Beslissend moment: doel gehaald, maar alle worpen mislukken → toch gehaald dankzij de voorsprong
   await playMoment('yes', 1);
   check((await page.$('.moment.done.ok')) !== null, 'goede avond + slechte worpen op het einde = toch gehaald');
+  check((await page.$('.pech-now')) === null, 'zotte pech is weg na een nieuwe scène');
+  const itemsBefore = (await page.$$('.backpack .item')).length;
+  await click('[data-action="reward"]');
+  await giveTo(turnName);
+  check((await page.$$('.backpack .item')).length === itemsBefore + 1, 'beloning na een gelukt moment: nog een voorwerp');
+  check((await page.$('[data-action="reward"]')) === null, 'de beloning kan maar één keer');
   check((await text('.clue-count b')) === '1/3', 'gehaald: eerste aanwijzing gevonden');
   check((await text('.meter b')) === '0/6', 'gehaald: meter blijft op 0');
   await shot('seizoen-moment-gehaald');

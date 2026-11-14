@@ -26,7 +26,14 @@
 - **Uitzonderlijk rollen**: ook wie niet aan de beurt is, kan rollen (bv. een val die iedereen treft) via de knop
   op zijn kaart. De beurt verschuift dan niet, en die held staat op slot tot zijn eigen beurt.
 - **Volgende ▶** blijft voor beurten zonder worp (gewoon iets vertellen of doen).
-- **− / +** bij de frietjes: frietje opeten of verdienen (bv. na een opdracht van de regelkaart).
+- **Verdien een frietje**: de app geeft een opdracht (dansje, gek stemmetje, op uw stoel staan…). *Andere opdracht* als
+  die niet past. **Gedaan!** = +1 frietje. Met **− / +** kan je frietjes ook handmatig bijstellen.
+- **Zotte pech**: na een mislukte worp kan je opnieuw proberen met een frietje, **of** de **pech-dobbelsteen** rollen:
+  1–3 = zotte pech (staat dan op de kaart van de held, en bij hulp ook bij de helper), 4–6 = geluk gehad.
+  Zotte pech duurt tot de volgende scène (of tik op ✕).
+- **Rugzak**: tik op **Iets gevonden!** als jullie in het verhaal iets vinden. De app kiest een (verrassings)voorwerp,
+  jullie kiezen wie het in de rugzak stopt (max. 6 per held). Na een gelukt beslissend moment krijgen jullie ook een
+  **beloning**. In het dobbelvenster kan je een voorwerp **gebruiken**: 1× per sessie telt die worp als "goed in".
 - **Gebruiken** bij de kracht: zet ze op "gebruikt" voor deze sessie (nog eens tikken = terugzetten).
 - Elke nieuwe sessie: iedereen weer 3 frietjes en een ongebruikte kracht.
 
