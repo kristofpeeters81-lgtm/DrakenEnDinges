@@ -111,18 +111,36 @@ async function playGroup(value) {
   if (await page.$('.rollers [data-action="ally-roll"]')) await click('.rollers [data-action="ally-roll"]');
 }
 
-async function playMoment(goal, value) {
-  while (await page.$('[data-action="scene-next"]')) {
-    await click('[data-action="scene-next"]');
-    await answer('scène', 'yes');
+/** Sleutelmoment van de huidige scène: eerste aanpak, eerste held, echte worp met `value`. */
+async function playKey(value) {
+  await click('[data-action="key-open"]');
+  await answer('sleutelmoment', 'yes');
+  await click('[data-action="key-approach"]');
+  await click('[data-action="key-hero"]');
+  await click('[data-action="key-roll"]');
+  await realRollInPanel(value);
+  await page.waitForSelector('.key-result');
+}
+
+/** Speelt de rest van het hoofdstuk: de nog open sleutelmomenten met `keyValues`, dan het beslissende moment met `value`. */
+async function playMoment(keyValues, value) {
+  const values = [...keyValues];
+  for (;;) {
+    if (await page.$('[data-action="key-open"]')) await playKey(values.shift() ?? 6);
+    if (await page.$('[data-action="scene-next"]')) {
+      await click('[data-action="scene-next"]');
+      continue;
+    }
+    break;
   }
   await click('[data-action="moment-start"]');
   await answer('beslissende moment', 'yes');
-  await answer('doel', goal);
   await page.waitForSelector('.rollers');
   await playGroup(value);
   await page.waitForSelector('.moment.done');
 }
+
+const isTestStory = () => page.$('.test-badge').then((el) => el !== null);
 
 async function fill(field, value) {
   const sel = `input[data-field="${field}"]`;
@@ -342,7 +360,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 7, 'bestand heeft app-naam en versie (7)');
+  check(saved.app === 'draken-en-dinges' && saved.version === 8, 'bestand heeft app-naam en versie (8)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -429,11 +447,26 @@ try {
   await click('[data-action="ideas-toggle"]');
   await page.waitForSelector('.ideas-list');
   check((await page.$$('.ideas-list li')).length >= 2, 'ideeën als jullie vastzitten: minstens 2');
+  check((await page.$('[data-action="scene-next"]')) === null, 'verder in het verhaal kan pas na het sleutelmoment');
+
+  // Sleutelmoment 1: aanpak + held kiezen, rollen → gevolg, ster, en de wending in de "gelukt"-versie
+  await click('[data-action="key-open"]');
+  await answer('sleutelmoment', 'yes');
+  await page.waitForSelector('.key-moment');
+  check((await page.$$('[data-action="key-approach"]')).length >= 2, 'sleutelmoment: minstens 2 aanpakken');
+  check((await page.$('[data-action="key-roll"][disabled]')) !== null, 'rollen kan pas als aanpak en held gekozen zijn');
+  await shot('seizoen-sleutelmoment');
+  await click('[data-action="key-approach"]');
+  await click('[data-action="key-hero"]');
+  await click('[data-action="key-roll"]');
+  await realRollInPanel(6);
+  await page.waitForSelector('.key-result.ok');
+  check((await page.$$('.lead .star.on')).length === 1, 'gelukt sleutelmoment = een voorsprong-ster');
   await click('[data-action="scene-next"]');
-  await answer('scène', 'yes');
   await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
   check(true, 'verder in het verhaal: de wending');
-  check((await page.$('.earlier')) !== null, 'de eerdere scène blijft na te lezen');
+  if (await isTestStory()) check((await text('.scene-text')).includes('na GELUKT'), 'vertakking: na een gelukt sleutelmoment volgt de "gelukt"-wending');
+  check((await page.$('.earlier')) !== null, 'de eerdere scène (met gevolg) blijft na te lezen');
   check((await page.$('.ideas-list')) === null, 'ideeën klappen dicht bij een nieuwe scène');
   await shot('seizoen-wending');
 
@@ -457,14 +490,14 @@ try {
   await page.waitForSelector('#overlay', { hidden: true });
   check(Number(await page.$eval('.table-card .fries-label b', (el) => el.textContent)) === friesBefore + 1, 'opdracht gedaan: +1 frietje');
 
-  // Geslaagde worp mét voorwerp → telt als goed in, voorwerp gebruikt, voorsprong-ster
+  // Geslaagde vrije worp mét voorwerp → telt als goed in, voorwerp gebruikt, maar géén ster
   await click('.turn-banner [data-action="roll"]');
   await page.waitForSelector('.dice-panel.mode-setup');
   await click('[data-action="item"][data-id="0"]');
   check((await page.$('[data-action="edge"][data-id="goed"].active')) !== null, 'voorwerp gebruiken = de worp telt als "goed in"');
   await realRollInPanel(6);
   check((await page.$$('.backpack .item.used')).length === 1, 'het voorwerp is deze sessie gebruikt');
-  check((await page.$$('.lead .star.on')).length === 1, 'geslaagde worp geeft een voorsprong-ster');
+  check((await page.$$('.lead .star.on')).length === 1, 'een vrije worp geeft geen voorsprong-ster');
 
   // Mislukte worp → pech-dobbelsteen
   await click('.turn-banner [data-action="roll"]');
@@ -478,9 +511,9 @@ try {
   await page.waitForSelector('#overlay', { hidden: true });
   check(((await page.$('.pech-now')) !== null) === gotPech, `pech-dobbelsteen: ${gotPech ? 'zotte pech staat op de kaart' : 'geluk gehad'}`);
 
-  // Beslissend moment: doel gehaald, maar alle worpen mislukken → toch gehaald dankzij de voorsprong
-  await playMoment('yes', 1);
-  check((await page.$('.moment.done.ok')) !== null, 'goede avond + slechte worpen op het einde = toch gehaald');
+  // Sleutelmoment 2 gelukt → 3 sterren; dan mislukken alle worpen bij het moment → toch gelukt
+  await playMoment([6], 1);
+  check((await page.$('.moment.done.ok')) !== null, 'goede avond (2 sleutelmomenten gelukt) + slechte worpen op het einde = toch gelukt');
   check((await page.$('.pech-now')) === null, 'zotte pech is weg na een nieuwe scène');
   const itemsBefore = (await page.$$('.backpack .item')).length;
   await click('[data-action="reward"]');
@@ -506,7 +539,12 @@ try {
   check(spoken.length === 1 && spoken[0] > 100, 'app-stem: "Lees voor" leest de scène voor (met "Vorige keer")');
   check((await text('.chapter-label')).includes('Hoofdstuk 2 van 3'), 'volgende sessie = hoofdstuk 2');
   check((await page.$('.recap')) !== null, 'hoofdstuk 2 begint met "Vorige keer in Kakofonië"');
-  await playMoment('no', 1);
+  await playKey(1);
+  check((await page.$('.key-result.nok')) !== null, 'mislukt sleutelmoment: het verhaal gaat toch verder');
+  await click('[data-action="scene-next"]');
+  await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
+  if (await isTestStory()) check((await text('.scene-text')).includes('na MISLUKT'), 'vertakking: na een mislukt sleutelmoment volgt de "mislukt"-wending');
+  await playMoment([1], 1);
   check((await page.$('.moment.done.nok')) !== null, 'zonder voorsprong en met slechte worpen: mislukt');
   check((await text('.meter b')) === '2/6', 'mislukt: meter stijgt met 2');
 
@@ -514,7 +552,7 @@ try {
   await stopSessionLater();
   await startSessionAs('seizoen');
   check((await text('.chapter-label')).includes('Hoofdstuk 3 van 3'), 'hoofdstuk 3');
-  await playMoment('yes', 6);
+  await playMoment([6, 6], 6);
   check((await text('.clue-count b')) === '2/3', 'tweede aanwijzing');
 
   // Finale: rondes tot de slechterik verslagen is

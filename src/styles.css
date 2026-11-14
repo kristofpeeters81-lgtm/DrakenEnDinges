@@ -741,6 +741,57 @@ small {
   font-size: 19px !important;
 }
 
+.key-moment {
+  border-top: 3px dashed var(--accent);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.key-label {
+  font-family: var(--title);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 0 0 4px !important;
+}
+
+.chapter .key-question {
+  font-family: var(--title);
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.key-moment .seg {
+  text-align: left;
+  max-width: 340px;
+}
+
+.key-result {
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin-top: 12px;
+}
+
+.key-result.ok {
+  background: #f0fdf4;
+  border: 3px solid var(--ok);
+}
+
+.key-result.nok {
+  background: #fff7ed;
+  border: 3px solid var(--accent);
+}
+
+.key-verdict {
+  font-family: var(--title);
+  font-size: 24px;
+  margin: 0 0 6px !important;
+}
+
+.lead .star.bonus.on {
+  color: #86efac;
+}
+
 .moment {
   border: 3px dashed var(--accent);
   border-radius: 14px;

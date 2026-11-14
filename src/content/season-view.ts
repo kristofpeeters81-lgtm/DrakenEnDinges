@@ -2,7 +2,7 @@
 
 import { CHAPTERS, FIGURES_PER_SEASON, PLACES_PER_SEASON, type ContentCounts, type Season } from '../game/season';
 import { decodeContent } from './codec';
-import { fill, isSeasonContent, type SeasonContent, type VillainContent } from './season-content';
+import { fill, isSeasonContent, type Scene, type SeasonContent, type VillainContent } from './season-content';
 import { DATA as SEIZOENEN } from './seizoenen.data';
 
 let content: SeasonContent | null = null;
@@ -48,12 +48,32 @@ export interface ChapterView {
   recap: string | null;
   /** Enkel in hoofdstuk 1: kennismaking met de slechterik en wat hij wil. */
   intro: string | null;
-  /** Begin en wending, met de bouwstenen ingevuld. */
-  scenes: Array<{ tekst: string; ideeen: string[] }>;
+  /** De gespeelde/huidige scènes: [0] het begin, [1] de wending in de versie die bij sleutelmoment 1 hoort. */
+  scenes: SceneView[];
   doel: string;
   plaats: { naam: string; beschrijving: string };
   figuur: { naam: string; beschrijving: string };
-  moment: string;
+  /** De climax in de versie die bij sleutelmoment 2 hoort (null zolang dat nog niet gespeeld is). */
+  moment: string | null;
+}
+
+export interface SceneView {
+  tekst: string;
+  ideeen: string[];
+  sleutel: { vraag: string; aanpakken: Array<{ label: string; past: string }>; gelukt: string; mislukt: string };
+}
+
+function sceneView(sc: Scene, vv: Record<string, string>): SceneView {
+  return {
+    tekst: fill(sc.tekst, vv),
+    ideeen: sc.ideeen.map((i) => fill(i, vv)),
+    sleutel: {
+      vraag: fill(sc.sleutel.vraag, vv),
+      aanpakken: sc.sleutel.aanpakken.map((a) => ({ label: fill(a.label, vv), past: fill(a.past, vv) })),
+      gelukt: fill(sc.sleutel.gelukt, vv),
+      mislukt: fill(sc.sleutel.mislukt, vv),
+    },
+  };
 }
 
 function recapOf(season: Season, chapter: number): string | null {
@@ -75,11 +95,14 @@ export function chapterView(season: Season): ChapterView {
     titel: fill(step.titel, vv),
     recap: recapOf(season, i),
     intro: i === 0 ? `${fill(v.intro, vv)} ${fill(v.doel, vv)}` : null,
-    scenes: step.scenes.map((sc) => ({ tekst: fill(sc.tekst, vv), ideeen: sc.ideeen.map((i) => fill(i, vv)) })),
+    scenes: [
+      sceneView(step.begin, vv),
+      ...(season.keys.length >= 1 ? [sceneView(season.keys[0] ? step.wending.gelukt : step.wending.mislukt, vv)] : []),
+    ],
     doel: fill(step.doel, vv),
     plaats: c.plaatsen[season.places[i]],
     figuur: c.figuren[season.figures[i]],
-    moment: fill(step.moment, vv),
+    moment: season.keys.length >= 2 ? fill(season.keys[1] ? step.moment.gelukt : step.moment.mislukt, vv) : null,
   };
 }
 

@@ -43,14 +43,22 @@ describe('verborgen inhoud', () => {
     for (let v = 0; v < c.villains; v++) {
       const season = {
         villain: v, places: [0, 1, 2, 3], figures: [0, 1, 2], chapter: 0, meter: 0, clues: 0, results: [],
-        momentDone: false, scene: 0, rewardTaken: false, leadRolls: 0, goalMet: false, hearts: null, heartsStart: null, finished: false,
+        momentDone: false, scene: 0, rewardTaken: false, keys: [] as boolean[], hearts: null, heartsStart: null, finished: false,
       };
       for (let ch = 0; ch < CHAPTERS; ch++) {
         season.chapter = ch;
-        const view = chapterView(season);
-        const texts = [view.titel, view.doel, view.moment, ...view.scenes.reduce<string[]>((acc, s) => acc.concat([s.tekst], s.ideeen), [])];
-        if (view.scenes.length !== MOMENT_SCENE || view.scenes.some((s) => s.ideeen.length < 2)) problems++;
-        problems += texts.filter((t) => /\{\w+\}/.test(t)).length;
+        // Alle 4 paden: gelukt/mislukt bij elk sleutelmoment
+        for (const keys of [[true, true], [true, false], [false, true], [false, false]]) {
+          season.keys = keys;
+          const view = chapterView(season);
+          const sceneTexts = view.scenes.reduce<string[]>(
+            (acc, s) => acc.concat([s.tekst, s.sleutel.vraag, s.sleutel.gelukt, s.sleutel.mislukt], s.ideeen, s.sleutel.aanpakken.map((x) => x.label)),
+            [],
+          );
+          const texts = [view.titel, view.doel, view.moment ?? '', ...sceneTexts];
+          if (view.scenes.length !== MOMENT_SCENE || view.moment === null || view.scenes.some((s) => s.ideeen.length < 2 || s.sleutel.aanpakken.length < 2)) problems++;
+          problems += texts.filter((t) => /\{\w+\}/.test(t)).length;
+        }
       }
       season.chapter = CHAPTERS;
       if (/\{\w+\}/.test(finaleView(season).tekst)) problems++;

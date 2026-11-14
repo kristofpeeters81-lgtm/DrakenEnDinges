@@ -142,6 +142,20 @@ describe('spelbestand', () => {
     expect(loaded.heroes[0].buddy).toBeNull();
   });
 
+  it('een seizoen uit versie 7 krijgt sleutelmomenten voor de scènes die al voorbij zijn', () => {
+    const g = sampleGame();
+    beginSeasonSession(g, { villains: 3, places: 6, figures: 4 });
+    const raw = JSON.parse(serializeGame(g)) as { version: number; game: { season: Record<string, unknown> } };
+    raw.version = 7;
+    delete raw.game.season.keys;
+    raw.game.season.leadRolls = 2;
+    raw.game.season.goalMet = true;
+    raw.game.season.scene = 1;
+    const loaded = parseGame(JSON.stringify(raw));
+    expect(loaded.season?.keys).toEqual([true]);
+    expect(loaded.season && 'leadRolls' in loaded.season).toBe(false);
+  });
+
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {
     expect(saveFileName(new Date(2026, 10, 14, 20, 5))).toBe('Draken en Dinges - 2026-11-14 20.05.txt');
   });

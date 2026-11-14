@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addLead,
   advanceChapter,
   advanceScene,
+  keyDone,
+  MAX_LEAD,
   MOMENT_SCENE,
+  recordKey,
   leadTotal,
-  MAX_LEAD_FROM_ROLLS,
   CHAPTERS,
   finaleHearts,
   finaleRound,
@@ -117,84 +118,85 @@ describe('beslissend moment', () => {
   });
 });
 
-describe('scènes in een hoofdstuk', () => {
-  it('begin → wending → beslissend moment, en niet verder', () => {
+describe('scènes en sleutelmomenten', () => {
+  it('begin → sleutelmoment → wending → sleutelmoment → beslissend moment', () => {
     const s = newSeason([], counts);
+    advanceScene(s);
     expect(s.scene).toBe(0);
+    expect(recordKey(s, true)).toBe(true);
+    expect(keyDone(s)).toBe(true);
     advanceScene(s);
     expect(s.scene).toBe(1);
+    expect(recordKey(s, false)).toBe(true);
     advanceScene(s);
     expect(s.scene).toBe(MOMENT_SCENE);
-    advanceScene(s);
-    expect(s.scene).toBe(MOMENT_SCENE);
+    expect(s.keys).toEqual([true, false]);
+    expect(recordKey(s, true)).toBe(false);
   });
 
-  it('nieuw hoofdstuk begint weer bij de eerste scène', () => {
+  it('één sleutelmoment per scène', () => {
     const s = newSeason([], counts);
+    recordKey(s, false);
+    expect(recordKey(s, true)).toBe(false);
+    expect(s.keys).toEqual([false]);
+  });
+
+  it('nieuw hoofdstuk begint weer bij de eerste scène, zonder sleutels', () => {
+    const s = newSeason([], counts);
+    recordKey(s, true);
     advanceScene(s);
     resolveMoment(s, 3, 3);
     advanceChapter(s);
     expect(s.scene).toBe(0);
+    expect(s.keys).toEqual([]);
   });
 
-  it('het beslissende moment zet de scène op het moment (ook als jullie het vroeger starten)', () => {
+  it('het beslissende moment zet de scène op het moment', () => {
     const s = newSeason([], counts);
     resolveMoment(s, 3, 3);
     expect(s.scene).toBe(MOMENT_SCENE);
   });
 });
 
-describe('voorsprong', () => {
-  it('geslaagde worpen geven voorsprong, maximum 2', () => {
-    const s = newSeason([], counts);
-    expect(addLead(s)).toBe(true);
-    expect(addLead(s)).toBe(true);
-    expect(addLead(s)).toBe(false);
-    expect(s.leadRolls).toBe(MAX_LEAD_FROM_ROLLS);
-  });
-
-  it('doel gehaald geeft er één bij', () => {
-    const s = newSeason([], counts);
-    addLead(s);
-    s.goalMet = true;
-    expect(leadTotal(s)).toBe(2);
+describe('voorsprong uit sleutelmomenten', () => {
+  it('1 ster per gelukt sleutelmoment, +1 als ze allebei lukten', () => {
+    const a = newSeason([], counts);
+    a.keys = [true, false];
+    expect(leadTotal(a)).toBe(1);
+    const b = newSeason([], counts);
+    b.keys = [true, true];
+    expect(leadTotal(b)).toBe(MAX_LEAD);
+    const c = newSeason([], counts);
+    c.keys = [false, false];
+    expect(leadTotal(c)).toBe(0);
   });
 
   it('een goede avond kan niet meer mislukken door slechte worpen op het einde', () => {
     const s = newSeason([], counts);
-    addLead(s);
-    addLead(s);
-    expect(resolveMoment(s, 0, 3)).toBe('gehaald');
+    s.keys = [true, true];
+    expect(resolveMoment(s, 0, 3)).toBe('perfect');
   });
 
-  it('voorsprong + goede worpen = perfect', () => {
+  it('half goed + slechte worpen: toch gehaald', () => {
     const s = newSeason([], counts);
-    addLead(s);
-    s.goalMet = true;
-    expect(resolveMoment(s, 1, 3)).toBe('perfect');
+    s.keys = [true, false];
+    expect(resolveMoment(s, 1, 3)).toBe('gehaald');
   });
 
   it('zonder voorsprong beslissen de dobbelstenen', () => {
     const s = newSeason([], counts);
+    s.keys = [false, false];
     expect(resolveMoment(s, 1, 3)).toBe('mislukt');
   });
 
-  it('nieuw hoofdstuk: voorsprong terug op nul', () => {
-    const s = newSeason([], counts);
-    addLead(s);
-    s.goalMet = true;
-    resolveMoment(s, 3, 3);
-    advanceChapter(s);
-    expect(leadTotal(s)).toBe(0);
-  });
-
-  it('geen voorsprong meer na het beslissende moment of in de finale', () => {
+  it('geen sleutelmomenten meer na het beslissende moment of in de finale', () => {
     const s = newSeason([], counts);
     resolveMoment(s, 3, 3);
-    expect(addLead(s)).toBe(false);
+    expect(recordKey(s, true)).toBe(false);
     s.chapter = CHAPTERS;
     s.momentDone = false;
-    expect(addLead(s)).toBe(false);
+    s.scene = 0;
+    expect(recordKey(s, true)).toBe(false);
   });
 });
 

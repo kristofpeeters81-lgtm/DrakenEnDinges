@@ -2,13 +2,13 @@
 // Wordt gebruikt voor het bestand (bewaren/laden) én voor de automatische reservekopie in de browser.
 // Oude bestanden moeten na app-updates blijven werken: verhoog SAVE_VERSION en voeg een stap toe in migrate().
 
-import { CHAPTERS, MAX_LEAD_FROM_ROLLS, METER_MAX, MOMENT_SCENE, type ChapterResult, type Season } from './season';
+import { CHAPTERS, KEY_MOMENTS, METER_MAX, MOMENT_SCENE, type ChapterResult, type Season } from './season';
 import { emptyStats, type HeroStats } from '../data/growth-data';
 import { MAX_BONUS_FRIES, MAX_BUDDY_STAGE, MAX_EXTRA_GOOD, MAX_ITEM_LEVEL, MAX_LEVEL, MAX_POWER_USES, type Buddy } from './growth';
 import { MAX_FRIES, MAX_HEROES, MAX_ITEMS, type Game, type Hero, type HeroItem, type SessionMode } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export class SaveError extends Error {}
 
@@ -46,6 +46,7 @@ function migrate(game: unknown, fromVersion: number): unknown {
   if (fromVersion < 5) g = v4ToV5(g);
   if (fromVersion < 6) g = v5ToV6(g);
   if (fromVersion < 7) g = v6ToV7(g);
+  if (fromVersion < 8) g = v7ToV8(g);
   return g;
 }
 
@@ -55,6 +56,15 @@ function migrate(game: unknown, fromVersion: number): unknown {
 /** Versie 5: scènes in een hoofdstuk. Oud seizoen: begin van het hoofdstuk, of het moment als dat al gespeeld is. */
 /** Versie 6: zotte pech, rugzak en beloning. Oude helden: geen pech, lege rugzak; beloning telt als gegeven. */
 /** Versie 7: groei. Oude helden: niveau 1, geen extra's; kracht/voorwerpen als tellers. */
+/** Versie 8: sleutelmomenten met vertakkingen i.p.v. sterren uit vrije worpen. Een lopend hoofdstuk krijgt
+ *  "gelukte" sleutels voor de scènes die al voorbij zijn (zo verliest niemand voorsprong). */
+function v7ToV8(game: unknown): unknown {
+  if (!isRecord(game) || !isRecord(game.season)) return game;
+  const { leadRolls: _l, goalMet: _g, ...season } = game.season;
+  const scene = typeof season.scene === 'number' ? season.scene : 0;
+  return { ...game, season: { ...season, keys: Array.from({ length: Math.min(scene, KEY_MOMENTS) }, () => true) } };
+}
+
 function v6ToV7(game: unknown): unknown {
   if (!isRecord(game) || !Array.isArray(game.heroes)) return game;
   const heroes = game.heroes.map((h: unknown) => {
@@ -227,12 +237,16 @@ function readSeason(v: unknown): Season | null {
     momentDone: bool(v, 'momentDone'),
     scene: num(v, 'scene', 0, MOMENT_SCENE),
     rewardTaken: bool(v, 'rewardTaken'),
-    leadRolls: num(v, 'leadRolls', 0, MAX_LEAD_FROM_ROLLS),
-    goalMet: bool(v, 'goalMet'),
+    keys: readKeys(v.keys),
     hearts: readNullableCount(v.hearts),
     heartsStart: readNullableCount(v.heartsStart),
     finished: bool(v, 'finished'),
   };
+}
+
+function readKeys(v: unknown): boolean[] {
+  if (!Array.isArray(v) || v.length > KEY_MOMENTS) broken();
+  return v.map((b: unknown) => (typeof b === 'boolean' ? b : broken()));
 }
 
 function readGame(v: unknown): Game {

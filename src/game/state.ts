@@ -4,7 +4,7 @@
 import { isListedPower } from '../data/ideas';
 import { emptyStats, type GuestTemplate, type HeroStats } from '../data/growth-data';
 import { applyCard, checkTitles, grantLevelUp, groupLevel, itemUses, titleName, type Buddy, type CardChoice, type CardKind } from './growth';
-import { addLead, advanceChapter, advanceScene, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
+import { advanceChapter, advanceScene, recordKey, finaleRound, isFinale, newSeason, resolveMoment, rollerCount, startFinale, type ChapterResult, type ContentCounts, type Season } from './season';
 
 export const MAX_HEROES = 6;
 export const START_FRIES = 3;
@@ -282,11 +282,11 @@ function requireSeason(game: Game): Season {
 }
 
 /** Een geslaagde gewone worp in een seizoenssessie. Geeft true terug als dat een voorsprong-ster opleverde. */
-export function recordSuccessForLead(game: Game): boolean {
-  if (game.sessionMode !== 'seizoen' || !game.season) return false;
-  const added = addLead(game.season);
-  if (added) touch(game);
-  return added;
+/** Uitkomst van het sleutelmoment van de huidige scène (bepaalt de vertakking en de voorsprong). */
+export function recordKeyResult(game: Game, success: boolean): boolean {
+  const ok = recordKey(requireSeason(game), success);
+  if (ok) touch(game);
+  return ok;
 }
 
 export function nextScene(game: Game): void {
@@ -305,10 +305,6 @@ export function takeReward(game: Game): boolean {
   return true;
 }
 
-export function setGoalMet(game: Game, met: boolean): void {
-  requireSeason(game).goalMet = met;
-  touch(game);
-}
 
 /** Beslissend moment van het huidige hoofdstuk afronden. */
 export function recordMoment(game: Game, successes: number): ChapterResult {

@@ -3,7 +3,7 @@
 
 import { requireGame, type App } from '../app';
 import { diceNeeded, heroDiceCount, resolveRoll, rollDice, targetFor, type Difficulty, type Edge, type RollOutcome, type RollSetup } from '../game/dice';
-import { canRoll, canUseBuddy, currentHero, eatFry, findHero, itemUsable, markRolled, nextTurn, presentHeroes, recordRollStat, recordSuccessForLead, setPech, useBuddy, useItem, type Hero } from '../game/state';
+import { canRoll, canUseBuddy, currentHero, eatFry, findHero, itemUsable, markRolled, nextTurn, presentHeroes, recordRollStat, setPech, useBuddy, useItem, type Hero } from '../game/state';
 import { itemUses } from '../game/growth';
 import { getItem } from '../content';
 import { isPechRoll, PECH, pickOther } from '../data/pech-opdrachten';
@@ -196,7 +196,6 @@ function finish(app: App, s: DiceState, dice: number[]): void {
   if (!s.group) {
     const game = requireGame(app);
     markRolled(game, s.heroId);
-    if (s.outcome.success && recordSuccessForLead(game)) toast('Voorsprong! ★ Dat helpt straks bij het beslissende moment.');
   }
   app.changed();
   render(app, s);

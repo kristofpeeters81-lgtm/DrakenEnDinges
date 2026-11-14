@@ -60,14 +60,20 @@ Bij **Start sessie** kies je wat jullie vandaag spelen:
 ### Hoe een seizoen werkt
 - Bovenaan staat het seizoen: de **Slechterik-meter** (0–6), jullie **voorsprong** (★) en de gevonden **aanwijzingen**.
 - Elk hoofdstuk toont *Vorige keer in Kakofonië…*, waar het gebeurt, wie er rondloopt en **Jullie doel vandaag**.
-- Een hoofdstuk heeft **3 scènes**: **het begin** (een concrete situatie om voor te lezen, met een vraag aan jullie),
-  **de wending** (er gebeurt iets onverwachts) en **het beslissende moment**. Speel elke scène vrij, met de Pruttelpot.
-  - **Ideeën als jullie vastzitten**: 2–3 mogelijke aanpakken, verborgen tot je erop tikt.
-  - **Verder in het verhaal ▶** als jullie klaar zijn met een scène. *Wat er al gebeurde* blijft na te lezen.
-- **Voorsprong**: elke geslaagde worp tijdens het hoofdstuk geeft een ster (max. 2). Een goede avond telt dus mee.
-- **Start het beslissende moment** (in de 3e scène): de app vraagt eerlijk of het doel gehaald is (ja = extra ster).
-  Dan rolt elke held één keer (4 of meer). Speel je met 1 of 2, dan rolt er een **bondgenoot** mee.
-  Elke ster telt als een succes.
+- Een hoofdstuk heeft **3 scènes**: **het begin**, **de wending** en **het beslissende moment**.
+  - Lees de scène voor en speel ze vrij: vertel wat jullie doen, rol voor spannende dingen, vraag de Pruttelpot.
+    **Ideeën als jullie vastzitten** toont 2–3 hints.
+  - Klaar met de scène? **Naar het sleutelmoment ▶**: de app toont wat er op het spel staat en 2–3 **aanpakken**.
+    Kies een aanpak en wie het probeert. Die held rolt (kies "goed in" als de aanpak bij hem past; een frietje
+    voor een herkansing mag).
+  - Het **gevolg** hangt af van de worp, en **de volgende scène ook**: na een gelukt sleutelmoment volgt een andere
+    wending (en een ander beslissend moment) dan na een mislukt. Het verhaal gaat altijd verder.
+  - **Verder in het verhaal ▶** pas na het sleutelmoment. *Wat er al gebeurde* (met de gevolgen) blijft na te lezen.
+- **Voorsprong** ★: elk gelukt sleutelmoment = 1 ster, allebei gelukt = een bonusster (max. 3).
+  Vrije worpen tijdens het spelen geven geen sterren (wel spanning, frietjes en pech).
+- **Start het beslissende moment** (de 3e scène): elke held rolt één keer (4 of meer). Speel je met 1 of 2,
+  dan rolt er een **bondgenoot** mee. Elke ster telt als een succes, dus een goede avond loopt niet meer mis
+  door pech op het einde.
   - **Perfect** (alles gelukt): meter −1 én een aanwijzing.
   - **Gelukt**: een aanwijzing.
   - **Mislukt**: meter +2.

@@ -2,21 +2,40 @@
 // In teksten mogen deze plaatshouders staan: {slechterik} {handlanger} {plaats} {figuur}.
 // Per hoofdstuk i: {plaats} = plaats i, {figuur} = figuur i. Finale: {plaats} = de laatste plaats, {figuur} = figuur 0.
 
+export interface KeyApproach {
+  /** Een concrete aanpak, bv. "Hem achternarennen over de markt". */
+  label: string;
+  /** Bij welke talenten het past, bv. "snel lopen, klimmen". */
+  past: string;
+}
+
+/** Sleutelmoment op het einde van een scène: wat staat er op het spel, hoe pakken jullie het aan, en wat volgt eruit. */
+export interface KeyMoment {
+  vraag: string;
+  aanpakken: KeyApproach[];
+  /** Gevolg als de worp lukt / mislukt (het verhaal gaat altijd verder). */
+  gelukt: string;
+  mislukt: string;
+}
+
 /** Een scène om voor te lezen: een concrete situatie die eindigt met een vraag aan de helden. */
 export interface Scene {
   tekst: string;
-  /** 2–3 mogelijke aanpakken, verborgen tot iemand op "Ideeën" tikt. */
+  /** 2–3 hints, verborgen tot iemand op "Ideeën" tikt. */
   ideeen: string[];
+  sleutel: KeyMoment;
 }
 
+/** Een hoofdstuk met vertakkingen:
+ *  begin → sleutelmoment 1 → wending.gelukt of wending.mislukt → sleutelmoment 2 → moment.gelukt of moment.mislukt. */
 export interface SeasonStep {
   titel: string;
-  /** Precies 2 scènes: [0] het begin (waar staan jullie, wat gebeurt er net), [1] de wending (iets onverwachts). */
-  scenes: Scene[];
   /** "Jullie doel vandaag": concreet en haalbaar in één avond (bv. "Vind X vóór Y"). */
   doel: string;
-  /** Uitleg bij het beslissende moment. */
-  moment: string;
+  begin: Scene;
+  wending: { gelukt: Scene; mislukt: Scene };
+  /** De climax, gekozen door de uitkomst van sleutelmoment 2 (moet passen na beide wendingen). */
+  moment: { gelukt: string; mislukt: string };
   gelukt: string;
   mislukt: string;
 }
@@ -68,19 +87,33 @@ function isNamed(v: unknown): v is NamedThing {
   return isRecord(v) && isStr(v.naam) && isStr(v.beschrijving);
 }
 
-function isScene(v: unknown): v is Scene {
-  return isRecord(v) && isStr(v.tekst) && isStrList(v.ideeen, 2);
+function isKey(v: unknown): v is KeyMoment {
+  return (
+    isRecord(v) &&
+    isStr(v.vraag) &&
+    isStr(v.gelukt) &&
+    isStr(v.mislukt) &&
+    Array.isArray(v.aanpakken) &&
+    v.aanpakken.length >= 2 &&
+    v.aanpakken.every((a) => isRecord(a) && isStr(a.label) && isStr(a.past))
+  );
 }
 
-export const STORY_SCENES = 2;
+function isScene(v: unknown): v is Scene {
+  return isRecord(v) && isStr(v.tekst) && isStrList(v.ideeen, 2) && isKey(v.sleutel);
+}
+
+function isBranch<T>(v: unknown, each: (x: unknown) => x is T): v is { gelukt: T; mislukt: T } {
+  return isRecord(v) && each(v.gelukt) && each(v.mislukt);
+}
 
 function isStep(v: unknown): v is SeasonStep {
   return (
     isRecord(v) &&
-    ['titel', 'doel', 'moment', 'gelukt', 'mislukt'].every((k) => isStr(v[k])) &&
-    Array.isArray(v.scenes) &&
-    v.scenes.length === STORY_SCENES &&
-    v.scenes.every(isScene)
+    ['titel', 'doel', 'gelukt', 'mislukt'].every((k) => isStr(v[k])) &&
+    isScene(v.begin) &&
+    isBranch(v.wending, isScene) &&
+    isBranch(v.moment, isStr)
   );
 }
 

@@ -3,8 +3,9 @@
 //
 // Elk hoofdstuk eindigt met een beslissend moment: elke held rolt 1×, de groep heeft een aantal successen nodig.
 //   alles gelukt → meter −1 + aanwijzing · genoeg gelukt → aanwijzing · mislukt → meter +2
-// Voorsprong: een goede avond telt mee, niet enkel de laatste worpen. Elke geslaagde worp tijdens het hoofdstuk
-// geeft 1 voorsprong-ster (max. 2), "doel gehaald" geeft er 1 bij. Elke ster telt als een succes.
+// Sleutelmomenten: elke scène (begin, wending) eindigt met een sleutelmoment (aanpak kiezen + 1 worp). De uitkomst
+// bepaalt welke versie van de volgende scène volgt (vertakking) en geeft voorsprong: 1 ster per gelukt sleutelmoment,
+// +1 als ze allebei lukten. Elke ster telt als een succes bij het beslissende moment. Vrije worpen geven geen sterren.
 // Finale: de slechterik heeft levens (meer bij een hoge meter, minder per aanwijzing). Rondes tot hij verslagen is:
 // altijd winbaar, een hoge meter maakt het enkel langer en spannender.
 
@@ -14,7 +15,9 @@ export const SCENES = 3;
 export const MOMENT_SCENE = SCENES - 1;
 export const METER_MAX = 6;
 export const MOMENT_TARGET = 4;
-export const MAX_LEAD_FROM_ROLLS = 2;
+/** Sleutelmomenten per hoofdstuk (na het begin en na de wending). */
+export const KEY_MOMENTS = MOMENT_SCENE;
+export const MAX_LEAD = KEY_MOMENTS + 1;
 /** Plaatsen per seizoen: één per hoofdstuk + één voor de finale. */
 export const PLACES_PER_SEASON = CHAPTERS + 1;
 export const FIGURES_PER_SEASON = CHAPTERS;
@@ -37,10 +40,8 @@ export interface Season {
   rewardTaken: boolean;
   /** Huidige scène in het hoofdstuk (0 = begin, 1 = wending, 2 = beslissend moment). */
   scene: number;
-  /** Voorsprong-sterren uit geslaagde worpen in dit hoofdstuk (0..MAX_LEAD_FROM_ROLLS). */
-  leadRolls: number;
-  /** De groep zei: doel van vandaag gehaald (+1 voorsprong). */
-  goalMet: boolean;
+  /** Uitkomst van de sleutelmomenten in dit hoofdstuk (true = gelukt), in volgorde. Bepaalt de vertakking. */
+  keys: boolean[];
   /** Finale: resterende levens van de slechterik (null = finale nog niet begonnen). */
   hearts: number | null;
   /** Levens bij de start van de finale (voor de weergave). */
@@ -81,8 +82,7 @@ export function newSeason(usedVillains: readonly number[], counts: ContentCounts
     momentDone: false,
     scene: 0,
     rewardTaken: false,
-    leadRolls: 0,
-    goalMet: false,
+    keys: [],
     hearts: null,
     heartsStart: null,
     finished: false,
@@ -107,21 +107,28 @@ export function neededSuccesses(rollers: number, meter: number): number {
   return Math.min(rollers, Math.ceil(rollers / 2) + (meter >= 3 ? 1 : 0));
 }
 
-/** Een geslaagde worp tijdens het hoofdstuk. Geeft true terug als dat een voorsprong-ster opleverde. */
-/** Verder in het verhaal: naar de volgende scène (tot aan het beslissende moment). */
-export function advanceScene(season: Season): void {
-  if (isFinale(season) || season.momentDone) return;
-  season.scene = Math.min(MOMENT_SCENE, season.scene + 1);
+/** Is het sleutelmoment van de huidige scène al gespeeld? */
+export function keyDone(season: Season): boolean {
+  return season.keys.length > season.scene;
 }
 
-export function addLead(season: Season): boolean {
-  if (isFinale(season) || season.momentDone || season.leadRolls >= MAX_LEAD_FROM_ROLLS) return false;
-  season.leadRolls += 1;
+/** Uitkomst van het sleutelmoment van de huidige scène. Geeft false als er nu geen sleutelmoment te spelen is. */
+export function recordKey(season: Season, success: boolean): boolean {
+  if (isFinale(season) || season.momentDone || season.scene >= MOMENT_SCENE || keyDone(season)) return false;
+  season.keys.push(success);
   return true;
 }
 
+/** Verder in het verhaal: naar de volgende scène, pas als het sleutelmoment van deze scène gespeeld is. */
+export function advanceScene(season: Season): void {
+  if (isFinale(season) || season.momentDone || !keyDone(season)) return;
+  season.scene = Math.min(MOMENT_SCENE, season.scene + 1);
+}
+
+/** Voorsprong: 1 ster per gelukt sleutelmoment, +1 als ze allemaal lukten. */
 export function leadTotal(season: Season): number {
-  return season.leadRolls + (season.goalMet ? 1 : 0);
+  const won = season.keys.filter(Boolean).length;
+  return won + (season.keys.length === KEY_MOMENTS && won === KEY_MOMENTS ? 1 : 0);
 }
 
 /** `diceSuccesses` = geslaagde worpen bij het moment zelf; de voorsprong telt er automatisch bij. */
@@ -146,8 +153,7 @@ export function advanceChapter(season: Season): void {
   season.momentDone = false;
   season.scene = 0;
   season.rewardTaken = false;
-  season.leadRolls = 0;
-  season.goalMet = false;
+  season.keys = [];
 }
 
 /** Levens in de finale. Sterkere helden (gemiddeld niveau 4, 7, 10) = de slechterik schaalt mee. */
