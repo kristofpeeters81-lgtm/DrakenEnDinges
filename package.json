@@ -1,0 +1,25 @@
+{
+  "name": "draken-en-dinges",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "node scripts/e2e.mjs",
+    "e2e:prod": "npm run build && node scripts/e2e.mjs --prod"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.43.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "@fontsource/luckiest-guy": "^5.2.5",
+    "@fontsource/patrick-hand": "^5.2.5"
+  }
+}

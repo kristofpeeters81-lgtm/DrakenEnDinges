@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draken &amp; Dinges — Heldenblad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="print.css">
+<style>
+  .page { gap: 2.6mm; }
+
+  .head { display: flex; align-items: flex-end; gap: 4mm; }
+  .head h1 { font-size: 26pt; flex: none; }
+  .head .brand { font-size: 10pt; color: var(--soft); display: block; font-family: var(--title-font); letter-spacing: .04em; }
+  .head .fields { flex: 1; display: grid; grid-template-columns: 1.5fr 1fr; gap: 3mm; }
+  .label { font-family: var(--title-font); font-size: 9.5pt; letter-spacing: .03em; }
+  .field { display: flex; align-items: flex-end; gap: 2mm; }
+  .field .write { flex: 1; }
+
+  .main { flex: 1; display: grid; grid-template-columns: 1.05fr 1fr; gap: 3mm; min-height: 0; overflow: hidden; }
+  .draw { display: flex; flex-direction: column; }
+  .draw .area { flex: 1; }
+  .draw .hint { text-align: center; color: var(--soft); font-size: 10pt; }
+
+  .right { display: flex; flex-direction: column; gap: 2.6mm; }
+  .right .box { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; padding-top: 1.8mm; padding-bottom: 1.8mm; }
+  .right .write { min-height: 6.5mm; }
+
+  .level { display: flex; justify-content: space-between; margin-top: 1.5mm; }
+  .level span {
+    width: 7.5mm; height: 7.5mm; border: 2px solid var(--ink); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--title-font); font-size: 9pt; color: #b9b0a4;
+  }
+
+  .tag { display: inline-flex; align-items: center; gap: 1.5mm; }
+  .tag svg { width: 6mm; height: 6mm; }
+
+  .row2, .bagbox, .starbox { flex: none; }
+  .row2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 3mm; }
+  .tick { display: inline-block; width: 4.5mm; height: 4.5mm; border: 2px solid var(--ink); border-radius: 1mm; vertical-align: -1mm; margin-left: 1mm; }
+  .fries { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 1mm; }
+  .fries svg { width: 4.2mm; height: 12mm; }
+
+  .stars { display: flex; justify-content: space-between; margin-top: 1mm; }
+  .stars svg { width: 9mm; height: 9mm; }
+
+  .bag { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm 3mm; margin-top: 1mm; }
+  .slot { border: 1.5px dashed var(--soft); border-radius: 2.5mm; padding: 1mm 2mm 1.4mm; }
+  .slot .write { min-height: 6mm; }
+  .slot .write.thin { min-height: 5mm; }
+  .stages { display: flex; gap: 2mm; font-size: 8.5pt; color: var(--soft); margin-top: 1mm; align-items: center; }
+  .stages i { display: inline-block; width: 3.6mm; height: 3.6mm; border: 1.6px solid var(--ink); border-radius: 50%; margin-right: .6mm; vertical-align: -.8mm; }
+
+  .row3 { display: grid; grid-template-columns: 1.35fr 1fr 0.75fr; gap: 3mm; height: 40mm; flex: none; }
+  .buddy { display: grid; grid-template-columns: 30mm 1fr; gap: 2.5mm; height: 100%; }
+  .buddy .area { border: 1.5px dashed var(--soft); border-radius: 2.5mm; }
+  .buddy .info { display: flex; flex-direction: column; justify-content: space-between; }
+  .lines { display: flex; flex-direction: column; justify-content: space-around; flex: 1; }
+  .row3 .box { display: flex; flex-direction: column; }
+  .pech .area { flex: 1; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="fry" viewBox="0 0 12 40">
+      <rect x="1.5" y="1.5" width="9" height="37" rx="3.5" fill="#fff" stroke="#1d1a16" stroke-width="2"/>
+    </symbol>
+    <symbol id="star" viewBox="0 0 24 24">
+      <polygon points="12,2 15,9 22,9.3 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.3 9,9" fill="#fff" stroke="#1d1a16" stroke-width="1.4" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="thumb-up" viewBox="0 0 24 24">
+      <path d="M7 11 V20 H4 V11 Z M7 11 L11 3 C13 3 13.5 4.5 13 7 L12.5 9.5 H18.5 C20 9.5 20.8 10.8 20.4 12.2 L18.6 18.6 C18.3 19.5 17.6 20 16.7 20 H7" fill="#fff" stroke="#1d1a16" stroke-width="1.6" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="thumb-down" viewBox="0 0 24 24">
+      <g transform="rotate(180 12 12)"><path d="M7 11 V20 H4 V11 Z M7 11 L11 3 C13 3 13.5 4.5 13 7 L12.5 9.5 H18.5 C20 9.5 20.8 10.8 20.4 12.2 L18.6 18.6 C18.3 19.5 17.6 20 16.7 20 H7" fill="#fff" stroke="#1d1a16" stroke-width="1.6" stroke-linejoin="round"/></g>
+    </symbol>
+    <symbol id="bolt" viewBox="0 0 24 24">
+      <path d="M13 2 L4 14 H11 L10 22 L20 9 H13 Z" fill="#fff" stroke="#1d1a16" stroke-width="1.6" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="toolbar">
+  <span>Heldenblad — 1 per speler, print op A4</span>
+  <button onclick="window.print()">Afdrukken</button>
+</div>
+
+<section class="page">
+  <header class="head">
+    <h1><span class="brand">Draken &amp; Dinges</span>Heldenblad</h1>
+    <div class="fields">
+      <div class="field"><span class="label">Naam van uw held</span><div class="write"></div></div>
+      <div class="field"><span class="label">Gespeeld door</span><div class="write"></div></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="box draw">
+      <div class="area"></div>
+      <div class="hint">Teken hier uw held — met alles erop en eraan</div>
+    </div>
+
+    <div class="right">
+      <div class="box">
+        <span class="label">Soort</span> <span class="small">— bv. trol die koekjes bakt. Meer ideeën op de regelkaart.</span>
+        <div class="write"></div>
+        <div class="write"></div>
+      </div>
+      <div class="box">
+        <span class="label">Niveau <span class="small" style="font-family:var(--body-font)">— kleur een bolleke bij elke level-up</span></span>
+        <div class="level">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+        </div>
+      </div>
+      <div class="box">
+        <span class="tag"><svg><use href="#thumb-up"/></svg><span class="label">Goed in</span></span>
+        <div class="write"></div>
+        <div class="write"></div>
+        <div class="write"></div>
+      </div>
+      <div class="box">
+        <span class="tag"><svg><use href="#thumb-down"/></svg><span class="label">Slecht in</span></span>
+        <div class="write"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="box">
+      <span class="tag"><svg><use href="#bolt"/></svg><span class="label">Speciale kracht</span></span>
+      <span class="small" style="float:right">deze sessie gebruikt <span class="tick"></span></span>
+      <div class="write"></div>
+      <p class="small" style="margin:1.2mm 0 0">1× per sessie · lukt altijd, zonder rollen · duurt hoogstens 1 scène.<br>
+      Niet toegelaten: onoverwinnelijk zijn, alles kunnen, de slechterik in één keer verslaan. Iedereen moet “ja” zeggen.</p>
+    </div>
+    <div class="box">
+      <span class="label">Frietjes = geluk</span>
+      <p class="small" style="margin:.8mm 0 0"><b>Mislukt?</b> Eet 1 frietje op en rol opnieuw. De nieuwe worp telt.<br>
+      Start elke sessie met 3. Op is op! <b>Meer?</b> Doe een opdracht.</p>
+      <div class="fries">
+        <svg><use href="#fry"/></svg><svg><use href="#fry"/></svg><svg><use href="#fry"/></svg>
+        <svg><use href="#fry"/></svg><svg><use href="#fry"/></svg><svg><use href="#fry"/></svg>
+        <svg><use href="#fry"/></svg><svg><use href="#fry"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="box starbox">
+    <span class="label">Sterren</span> <span class="small">— voor een slim idee, een grappig moment of een opdracht</span>
+    <div class="stars">
+      <svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg>
+      <svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg>
+      <svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg>
+      <svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg>
+    </div>
+  </div>
+
+  <div class="box bagbox">
+    <span class="label">Rugzak</span> <span class="small">— voorwerpen die ge vindt. Kleur het bolleke als het sterker wordt.</span>
+    <div class="bag">
+      <div class="slot"><div class="write"></div><div class="write thin"></div><div class="stages"><span><i></i>roestig</span><span><i></i>blinkend</span><span><i></i>legendarisch</span></div></div>
+      <div class="slot"><div class="write"></div><div class="write thin"></div><div class="stages"><span><i></i>roestig</span><span><i></i>blinkend</span><span><i></i>legendarisch</span></div></div>
+      <div class="slot"><div class="write"></div><div class="write thin"></div><div class="stages"><span><i></i>roestig</span><span><i></i>blinkend</span><span><i></i>legendarisch</span></div></div>
+      <div class="slot"><div class="write"></div><div class="write thin"></div><div class="stages"><span><i></i>roestig</span><span><i></i>blinkend</span><span><i></i>legendarisch</span></div></div>
+      <div class="slot"><div class="write"></div><div class="write thin"></div><div class="stages"><span><i></i>roestig</span><span><i></i>blinkend</span><span><i></i>legendarisch</span></div></div>
+      <div class="slot"><div class="write"></div><div class="write thin"></div><div class="stages"><span><i></i>roestig</span><span><i></i>blinkend</span><span><i></i>legendarisch</span></div></div>
+    </div>
+  </div>
+
+  <div class="row3">
+    <div class="box">
+      <div class="buddy">
+        <div class="area"></div>
+        <div class="info">
+          <span class="label">Maatje</span>
+          <div class="write"></div>
+          <div class="stages" style="font-size:9pt"><span><i></i>klein</span><span><i></i>groter</span><span><i></i>straf</span></div>
+          <span class="small">Trucjes:</span>
+          <div class="write"></div>
+          <div class="write"></div>
+        </div>
+      </div>
+    </div>
+    <div class="box">
+      <span class="label">Titels</span>
+      <div class="lines">
+        <div class="write"></div>
+        <div class="write"></div>
+        <div class="write"></div>
+        <div class="write"></div>
+      </div>
+    </div>
+    <div class="box pech">
+      <span class="label">Pech nu</span>
+      <div class="area"></div>
+      <span class="small">met potlood!</span>
+    </div>
+  </div>
+
+  <div class="motto">Kakofonië · “Wie ’t riekt, heeft ’t gefliekt”</div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draken &amp; Dinges — Regelkaart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="print.css">
+<style>
+  /* Voorkant */
+  .head { display: flex; align-items: center; gap: 4mm; margin-bottom: 3mm; }
+  .head .shield { width: 26mm; height: 30mm; flex: none; }
+  .head .titles { flex: 1; }
+  .head .sub { font-size: 12.5pt; margin-top: 1.5mm; }
+  .head .motto { text-align: left; margin-top: 1.2mm; }
+
+  .cols { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; min-height: 0; }
+  .col { display: flex; flex-direction: column; gap: 2.6mm; }
+  .col .box { flex: none; }
+  .col .box.grow { flex: 1; }
+
+  .roll { display: flex; align-items: center; gap: 2.5mm; margin: 1mm 0 1.5mm; }
+  .roll svg { width: 11mm; height: 11mm; flex: none; }
+  .roll .big { font-family: var(--title-font); font-size: 12pt; }
+  .ok { color: #15803d; }
+  .nok { color: #b91c1c; }
+
+  table.oracle { width: 100%; border-collapse: collapse; margin: 1mm 0 1.5mm; }
+  table.oracle td { padding: .5mm 1mm; border-bottom: 1px dashed #b9b0a4; }
+  table.oracle td:first-child { width: 8mm; text-align: center; font-family: var(--title-font); }
+
+  .twee { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm; margin-top: 1mm; }
+  .twee div { border: 1.5px dashed var(--soft); border-radius: 2.5mm; padding: 1.2mm 2mm; font-size: 10.5pt; }
+
+  .golden li { margin-bottom: .6mm; }
+  .side-ico { position: absolute; right: 3mm; top: 2mm; width: 10mm; height: 12mm; }
+
+  /* Achterkant */
+  .back-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 3mm; }
+  .back-head h1 { font-size: 22pt; }
+  .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-bottom: 3mm; }
+  table.d6 { width: 100%; border-collapse: collapse; }
+  table.d6 td { padding: .6mm 1mm; vertical-align: top; border-bottom: 1px dashed #b9b0a4; }
+  table.d6 td:first-child { width: 7mm; text-align: center; font-family: var(--title-font); }
+  table.d6 tr:last-child td { border-bottom: none; }
+  table.d6 td:nth-child(3) { width: 7mm; text-align: center; font-family: var(--title-font); }
+  .prompt { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; }
+  .ideas { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5mm; min-height: 0; }
+  .ideas ol { font-size: 12pt; padding-left: 6mm; }
+  .ideas li { margin-bottom: 1.6mm; }
+  .back-foot { margin-top: 3mm; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="die-ok" viewBox="0 0 40 40">
+      <rect x="3" y="3" width="34" height="34" rx="7" fill="#fff" stroke="#1d1a16" stroke-width="2.5"/>
+      <g fill="#1d1a16"><circle cx="12" cy="12" r="3"/><circle cx="28" cy="12" r="3"/><circle cx="12" cy="28" r="3"/><circle cx="28" cy="28" r="3"/></g>
+    </symbol>
+    <symbol id="die-two" viewBox="0 0 64 40">
+      <rect x="2" y="6" width="28" height="28" rx="6" fill="#fff" stroke="#1d1a16" stroke-width="2.5"/>
+      <rect x="34" y="6" width="28" height="28" rx="6" fill="#fff" stroke="#1d1a16" stroke-width="2.5" transform="rotate(10 48 20)"/>
+      <g fill="#1d1a16"><circle cx="9" cy="13" r="2.4"/><circle cx="16" cy="20" r="2.4"/><circle cx="23" cy="27" r="2.4"/></g>
+      <g fill="#1d1a16" transform="rotate(10 48 20)"><circle cx="41" cy="13" r="2.4"/><circle cx="55" cy="13" r="2.4"/><circle cx="41" cy="27" r="2.4"/><circle cx="55" cy="27" r="2.4"/><circle cx="41" cy="20" r="2.4"/><circle cx="55" cy="20" r="2.4"/></g>
+    </symbol>
+    <symbol id="frietzak" viewBox="0 0 40 50">
+      <g fill="#fde68a" stroke="#1d1a16" stroke-width="2" stroke-linejoin="round">
+        <rect x="9" y="4" width="5" height="22" rx="2" transform="rotate(-12 11 15)"/>
+        <rect x="15" y="1" width="5" height="24" rx="2"/>
+        <rect x="21" y="3" width="5" height="22" rx="2" transform="rotate(6 23 14)"/>
+        <rect x="27" y="6" width="5" height="20" rx="2" transform="rotate(16 29 16)"/>
+      </g>
+      <path d="M5 18 H35 L24 48 H16 Z" fill="#fff" stroke="#1d1a16" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M9 24 H31" stroke="#c2410c" stroke-width="2"/>
+    </symbol>
+    <symbol id="star" viewBox="0 0 24 24">
+      <polygon points="12,2 15,9 22,9.3 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.3 9,9" fill="#fde68a" stroke="#1d1a16" stroke-width="1.6" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="shield" viewBox="0 0 100 115">
+      <path d="M8 8 H92 V52 C92 84 50 108 50 108 C50 108 8 84 8 52 Z" fill="#fff" stroke="#1d1a16" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M8 8 H50 V108 C50 108 8 84 8 52 Z" fill="#fef3c7"/>
+      <path d="M8 8 H92 V52 C92 84 50 108 50 108 C50 108 8 84 8 52 Z" fill="none" stroke="#1d1a16" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M28 40 L33 22 L42 33 L50 18 L58 33 L67 22 L72 40 Z" fill="#fde68a" stroke="#1d1a16" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="28" y="40" width="44" height="7" fill="#fde68a" stroke="#1d1a16" stroke-width="3"/>
+      <use href="#frietzak" x="34" y="52" width="32" height="40"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="toolbar">
+  <span>Regelkaart — print dubbelzijdig op 1 A4</span>
+  <button onclick="window.print()">Afdrukken</button>
+</div>
+
+<!-- ============ VOORKANT ============ -->
+<section class="page">
+  <header class="head">
+    <svg class="shield"><use href="#shield"/></svg>
+    <div class="titles">
+      <h1>Draken &amp; Dinges</h1>
+      <div class="sub">Het rollenspel van <b>Kakofonië</b> — waar niemand weet wat er gaat gebeuren.</div>
+      <div class="motto">“Wie ’t riekt, heeft ’t gefliekt”</div>
+    </div>
+  </header>
+
+  <div class="cols">
+    <div class="col">
+      <div class="box">
+        <h2><span class="num">1</span>Hoe werkt het?</h2>
+        <p>Ge speelt allemaal een held in het zotte land Kakofonië. De <b>tablet vertelt het verhaal</b>. Niemand weet wat er gaat gebeuren — ook papa en mama niet!</p>
+        <p>Zeg gewoon wat uw held doet. Alles mag. Écht alles.</p>
+      </div>
+
+      <div class="box">
+        <h2><span class="num">2</span>Maak uw held</h2>
+        <ol>
+          <li>Een <b>naam</b> — hoe zotter, hoe beter</li>
+          <li>Een <b>soort</b>: ridder, heks, trol… of iets zelf verzonnen</li>
+          <li><b>2× goed in</b> — bv. klimmen, zeveren</li>
+          <li><b>1× slecht in</b> — bv. stil zijn, niet lachen</li>
+          <li><b>1 speciale kracht</b> — 1× per sessie, lukt altijd (zonder rollen), duurt max. 1 scène</li>
+        </ol>
+        <p><b>Niet toegelaten:</b> onoverwinnelijk zijn of de slechterik in één keer verslaan. Een kracht doet <b>één ding</b>, en iedereen moet “ja” zeggen. Inspiratie? Kijk op de achterkant!</p>
+      </div>
+
+      <div class="box">
+        <h2><span class="num">3</span>Iets proberen</h2>
+        <p>Zeg wat ge doet. Is het spannend of moeilijk? Dan rolt ge 1 dobbelsteen.</p>
+        <div class="roll">
+          <svg><use href="#die-ok"/></svg>
+          <div><span class="big ok">4, 5 of 6 = gelukt!</span><br><span class="big nok">1, 2 of 3 = mislukt…</span></div>
+        </div>
+        <p><b>Héél moeilijk?</b> Dan moet ge 5 of 6 rollen.</p>
+        <div class="twee">
+          <div><b>Goed in?</b><br>Rol 2 dobbelstenen, neem de <b>hoogste</b>.</div>
+          <div><b>Slecht in?</b><br>Rol 2 dobbelstenen, neem de <b>laagste</b>.</div>
+        </div>
+        <p class="small" style="margin-top:1.2mm">Geen rekenwerk. Beloofd.</p>
+      </div>
+
+      <div class="box">
+        <h2><span class="num">4</span>Samen proberen</h2>
+        <p>Iemand mag u helpen: die rolt mee en de <b>hoogste</b> telt. Maar mislukt het toch? Dan hebt ge <b>allebei</b> pech. Amai.</p>
+      </div>
+
+      <div class="box grow">
+        <svg class="side-ico"><use href="#frietzak"/></svg>
+        <h2><span class="num">5</span>Frietjes = geluk</h2>
+        <p style="padding-right:11mm"><b>Mislukt uw worp?</b> Eet 1 frietje op en <b>rol opnieuw</b>. De nieuwe worp telt.</p>
+        <p>Iedereen start elke sessie met <b>3 frietjes</b>. Op is op! Bewaar ze dus voor een spannend moment.</p>
+        <p><b>Meer frietjes?</b> Doe een opdracht (zie achterkant): een gek stemmetje, een dansje, op uw stoel staan…</p>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="box">
+        <h2><span class="num">6</span>Pech</h2>
+        <p>Mislukt? Dan krijgt ge dikwijls een <b>zotte pech</b>: paars haar, in een kip veranderd, moeten rijmen…</p>
+        <p>Mislukt op een <b>belangrijk moment</b>? Dan stijgt de <b>Slechterik-meter</b> en komt het plan van de slechterik dichterbij. Oei.</p>
+      </div>
+
+      <div class="box">
+        <h2><span class="num">7</span>Het orakel</h2>
+        <p>Weet niemand het antwoord? Stel een <b>ja/nee-vraag</b> (“Is er een geheime deur?”) en rol:</p>
+        <table class="oracle">
+          <tr><td>1</td><td>Nee, en het is nog erger…</td></tr>
+          <tr><td>2</td><td>Nee.</td></tr>
+          <tr><td>3</td><td>Nee, maar…</td></tr>
+          <tr><td>4</td><td>Ja, maar…</td></tr>
+          <tr><td>5</td><td>Ja.</td></tr>
+          <tr><td>6</td><td>Ja, en zelfs nog beter!</td></tr>
+        </table>
+        <p><b>Waarschijnlijk?</b> Rol 2, neem de hoogste. <b>Onwaarschijnlijk?</b> Rol 2, neem de laagste. Verzin dan samen wat het betekent.</p>
+      </div>
+
+      <div class="box">
+        <h2><span class="num">8</span>Sterker worden</h2>
+        <p><svg class="ico"><use href="#star"/></svg> <b>Sterren</b> verdient ge met een slim idee, een grappig moment of een opdracht. Ruil ze in voor leuke extraatjes.</p>
+        <p>Na elke sessie: <b>level-up!</b> Kies 1 van 3 beloningskaarten. Onderweg vindt ge voorwerpen, titels en misschien… een maatje.</p>
+      </div>
+
+      <div class="box grow golden">
+        <h2><span class="num">9</span>Gouden regels</h2>
+        <ul>
+          <li><b>“Ja, en…”</b> — bouw verder op elkaars ideeën.</li>
+          <li>Lachen <b>mét</b> elkaar, nooit <b>óm</b> elkaar.</li>
+          <li>Twijfel? Vraag het orakel.</li>
+          <li>Wordt het saai? Roep <b>“Eidastinkt!”</b> en er gebeurt iets zot.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACHTERKANT ============ -->
+<section class="page">
+  <header class="back-head">
+    <h1>Speltabellen</h1>
+    <span class="small">voor als de tablet plat ligt — of als ge gewoon zin hebt om te rollen</span>
+  </header>
+
+  <div class="tables">
+    <div class="box">
+      <h2>Zotte pech <span class="small">(rol 1× · tot de volgende scène)</span></h2>
+      <table class="d6">
+        <tr><td>1</td><td>Uw haar wordt paars. En het blijft groeien.</td></tr>
+        <tr><td>2</td><td>Ge moet rijmen. Alles. Elke zin.</td></tr>
+        <tr><td>3</td><td>Ge zijt een kip. Ge moogt alleen nog “tok” zeggen.</td></tr>
+        <tr><td>4</td><td>Ge hebt de hik. Bij elke zin. <i>Hik!</i></td></tr>
+        <tr><td>5</td><td>Uw broek zakt af. Op het slechtste moment.</td></tr>
+        <tr><td>6</td><td>Ge praat zoals Lord Water Closet: héél deftig, met een Engels accent. <i>Indeed.</i></td></tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2>Opdrachten <span class="small">(doe het = 1 frietje)</span></h2>
+      <table class="d6">
+        <tr><td>1</td><td>Doe 10 seconden een kip na. Met geluid.</td></tr>
+        <tr><td>2</td><td>Zeg de wapenspreuk met de stem van een verkouden trol.</td></tr>
+        <tr><td>3</td><td>Sta op uw stoel en geef een speech als koning(in) van Kakofonië.</td></tr>
+        <tr><td>4</td><td>Zing wat ge daarnet zei, als een opera.</td></tr>
+        <tr><td>5</td><td>Doe de slechterik na. Met boze wenkbrauwen.</td></tr>
+        <tr><td>6</td><td>De anderen kiezen een opdracht voor u. Oei.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="box" style="margin-bottom:3mm">
+    <h2>Zotte prikkel <span class="small">— vastgelopen? Rol 2× en verzin iets met die twee woorden</span></h2>
+    <div class="prompt">
+      <table class="d6">
+        <tr><td>1</td><td>natte</td><td>4</td><td>gouden</td></tr>
+        <tr><td>2</td><td>piepende</td><td>5</td><td>boze</td></tr>
+        <tr><td>3</td><td>stinkende</td><td>6</td><td>dansende</td></tr>
+      </table>
+      <table class="d6">
+        <tr><td>1</td><td>sok</td><td>4</td><td>wc-rol</td></tr>
+        <tr><td>2</td><td>kip</td><td>5</td><td>nonkel</td></tr>
+        <tr><td>3</td><td>pollepel</td><td>6</td><td>pannenkoek</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h2 style="color:var(--ink); font-size:15pt; margin-bottom:2mm">Ideeën voor uw held <span class="small" style="font-family:var(--body-font)">— kies, verzin zelf iets, of rol de <b>12-zijdige dobbelsteen</b> (geen? rol 2 gewone: 1e worp 1-3 → nr. 1-6, 4-6 → nr. 7-12)</span></h2>
+  <div class="ideas">
+    <div class="box">
+      <h3>Soort</h3>
+      <ol>
+        <li>Ridder met hoogtevrees</li>
+        <li>Heks die bang is van katten</li>
+        <li>Trol die koekjes bakt</li>
+        <li>Prinses die liever in de modder speelt</li>
+        <li>Tovenaar zonder wenkbrauwen</li>
+        <li>Draak die vegetariër is</li>
+        <li>Piraat die zeeziek wordt</li>
+        <li>Robotridder van karton</li>
+        <li>Eenhoorn met hooikoorts</li>
+        <li>Spook dat niet eng kan doen</li>
+        <li>Kabouter met grootheidswaan</li>
+        <li>Frietbakker uit Scheetegem</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h3>Goed in</h3>
+      <ol>
+        <li>Klimmen</li>
+        <li>Sluipen</li>
+        <li>Snel lopen</li>
+        <li>Hard roepen</li>
+        <li>Zeveren (iemand ompraten)</li>
+        <li>Toveren</li>
+        <li>Koken</li>
+        <li>Dieren temmen</li>
+        <li>Slimme plannen</li>
+        <li>Dansen</li>
+        <li>Ruiken</li>
+        <li>Vechten met een pollepel</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h3>Slecht in</h3>
+      <ol>
+        <li>Stil zijn</li>
+        <li>Tellen</li>
+        <li>Niet lachen</li>
+        <li>Stilzitten</li>
+        <li>Zwemmen</li>
+        <li>Liegen</li>
+        <li>Onthouden</li>
+        <li>Links en rechts</li>
+        <li>Wakker blijven</li>
+        <li>Delen</li>
+        <li>Geheimen bewaren</li>
+        <li>Wachten</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h3>Speciale kracht</h3>
+      <ol>
+        <li>1 minuut onzichtbaar</li>
+        <li>Met dieren praten</li>
+        <li>Een scheet zo hard als een storm</li>
+        <li>Iets laten zweven</li>
+        <li>Iets uit uw broekzak halen dat ge nét nodig hebt</li>
+        <li>Iemand in slaap zingen</li>
+        <li>Door een muur wandelen</li>
+        <li>Even 3× zo groot worden</li>
+        <li>In 1 seconde een put graven</li>
+        <li>Iedereen doen lachen — zelfs de slechterik</li>
+        <li>Vliegen (maar alleen achteruit)</li>
+        <li>De tijd 5 seconden terugdraaien</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="motto back-foot">Draken &amp; Dinges · Kakofonië · “Wie ’t riekt, heeft ’t gefliekt”</div>
+</section>
+
+</body>
+</html>
