@@ -44,7 +44,7 @@ await page.evaluateOnNewDocument(() => {
   // Spoilerregel: verborgen inhoud wazig maken, zodat ze nooit leesbaar in een screenshot staat.
   document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
-    style.textContent = '.opening-text, .opening-title, .eida-event, .story-text, .chapter-title { filter: blur(7px) !important; }';
+    style.textContent = '.opening-text, .opening-title, .eida-event, .story-text, .chapter-title { filter: blur(14px) !important; }';
     document.head.appendChild(style);
   });
 });
@@ -433,11 +433,11 @@ try {
   await page.$$eval('.hero-card .switch', (els) => els[els.length - 1].click());
   await page.waitForFunction((n) => document.querySelectorAll('.hero-card.absent').length === 2, {}, cardsBefore);
 
-  console.log('Seizoen (testinhoud)');
+  console.log('Seizoen');
   await startSessionAs('seizoen');
   await page.waitForSelector('.season');
   check((await page.$('.opening')) === null, 'in een seizoen geen losse beginscène');
-  check((await page.$('.test-badge')) !== null, 'testinhoud is herkenbaar als TESTVERHAAL');
+  check((await page.$('.test-badge')) === null, 'echt verhaal: geen TESTVERHAAL-label meer');
   check((await text('.chapter-label')).includes('Hoofdstuk 1 van 3'), 'seizoen start bij hoofdstuk 1');
   check((await text('.meter b')) === '0/6', 'Slechterik-meter start op 0');
   await shot('seizoen-hoofdstuk-1');

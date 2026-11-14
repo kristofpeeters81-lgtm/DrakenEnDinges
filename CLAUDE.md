@@ -21,8 +21,8 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
   Vorm van de seizoensinhoud: `src/content/season-content.ts` (vertakt: begin → sleutelmoment → wending gelukt/mislukt →
   sleutelmoment → moment gelukt/mislukt); vorm controleren zonder inhoud te tonen: `node scripts/check-seasons.mjs <json>`.
   **Verhaalinhoud altijd laten nalezen door een sub-agent die ze niet schreef** (samenhang over alle paden, plotgaten),
-  dan verbeteren en opnieuw nalezen; bevindingen enkel in geheime bestanden, aan de hoofdsessie enkel aantallen. `seizoenen.data.ts` bevat nu **testinhoud** (`test: true`);
-  in blok 7 vervangt een sub-agent die door het echte verhaal (zelfde vorm, `test` weglaten).
+  dan verbeteren en opnieuw nalezen; bevindingen enkel in geheime bestanden, aan de hoofdsessie enkel aantallen. `seizoenen.data.ts` bevat het **echte verhaal** (3 slechteriken);
+  testinhoud (`test: true`, toont TESTVERHAAL) kan voor ontwikkeling tijdelijk in dezelfde vorm, maar nooit committen.
 - Elke verhaaltekst in de UI krijgt class `story-text`: de browsertest maakt die wazig in screenshots.
 - **Geen AI** in de app, **alles gratis**, werkt **offline**. CSP `connect-src 'none'` in de build nooit verwijderen.
 - Bewaren = **spelbestand** (deelmenu Android / download) met versienummer; de browser-kopie is enkel een vangnet.
