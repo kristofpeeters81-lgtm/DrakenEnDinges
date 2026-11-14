@@ -1,4 +1,4 @@
-// Ideeënlijsten voor het aanmaakscherm. Zelfde lijsten als op de achterkant van de regelkaart (print/regelkaart.html):
+// Ideeënlijsten voor het aanmaakscherm. Zelfde lijsten als op de achterkant van de regelkaart (public/print/regelkaart.html):
 // pas ze op beide plaatsen aan. Dit is geen spoilerinhoud.
 
 export const HERO_NAMES = [

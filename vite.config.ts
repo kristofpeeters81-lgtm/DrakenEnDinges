@@ -38,7 +38,20 @@ function serviceWorkerPlugin(): Plugin {
     apply: 'build',
     generateBundle(_options, bundle) {
       const files = Object.keys(bundle).filter((f) => !f.endsWith('.map'));
-      const all = ['./', ...files.map((f) => `./${f}`), './manifest.webmanifest', './favicon.svg'];
+      const extra = [
+        './manifest.webmanifest',
+        './favicon.svg',
+        './icons/icon-192.png',
+        './icons/icon-512.png',
+        './icons/icon-maskable-512.png',
+        './print/regelkaart.html',
+        './print/personageblad.html',
+        './print/print.css',
+        './print/fonts/luckiest-guy-latin-400-normal.woff2',
+        './print/fonts/patrick-hand-latin-400-normal.woff2',
+        './print/fonts/patrick-hand-latin-ext-400-normal.woff2',
+      ];
+      const all = ['./', ...files.map((f) => `./${f}`), ...extra];
       const version = createHash('sha256').update(all.join('|')).digest('hex').slice(0, 12);
       const sw = `// Draken & Dinges service worker — gegenereerd bij de build. Bewaart de app voor offline gebruik.
 const CACHE = 'dd-${version}';

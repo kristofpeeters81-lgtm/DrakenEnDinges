@@ -1,5 +1,5 @@
 // Teksten van de Pruttelpot (het orakel) en de zotte prikkels. Geen spoilerinhoud: dit is decor.
-// De eerste 6 woorden van elke prikkel-lijst staan ook op de regelkaart (print/regelkaart.html).
+// De eerste 6 woorden van elke prikkel-lijst staan ook op de regelkaart (public/print/regelkaart.html).
 
 import type { Answer } from '../game/oracle';
 

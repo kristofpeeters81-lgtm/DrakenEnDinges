@@ -27,7 +27,8 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
 - Humor: herkenbaar Vlaams voor een meisje van 10 (tussen verkavelingsvlaams en dialect), absurd/slapstick/woordgrapjes,
   wc-humor **subtiel** verstopt in namen. Gezond spannend, nooit echt eng.
 - Regels blijven minimaal (zie BOUWPLAN §2). Kernregel = gewone D6; D&D-dobbelstenen enkel optioneel.
-- Ideeënlijsten staan op twee plaatsen: `src/data/ideas.ts` en `print/regelkaart.html` — samen aanpassen.
+- Ideeënlijsten staan op twee plaatsen: `src/data/ideas.ts` en `public/print/regelkaart.html` — samen aanpassen
+  (ook de eerste 6 van pech/opdrachten/prikkels in `src/data/`).
 - Oude Android-WebViews: geen flex-`gap`, geen `:has()` (grid-gap mag).
 - Nooit pushen of een repo aanmaken zonder akkoord van de gebruiker.
 
@@ -41,7 +42,8 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
 - `src/game/season.ts` — seizoensregels (pure functies + tests).
 - `src/platform/file.ts` — delen/downloaden/inlezen. `src/storage/autosave.ts` — reservekopie in localStorage.
 - `src/ui/` — `dom.ts` (helpers + SVG-iconen), `dialog.ts` (eigen dialoog + meldingen).
-- `print/` — printbare regelkaart en heldenblad (los van de app; gebruiken nog Google Fonts).
+- `public/print/` — printbare regelkaart en heldenblad (gelinkt op het startscherm, eigen lettertypes in `public/print/fonts`, offline).
+- `public/icons/` — app-icoontjes, opnieuw maken met `node scripts/make-icons.mjs`.
 
 ## Commando's
 - `npm run dev` — ontwikkelserver op http://localhost:5347 (ook bereikbaar op het lokale netwerk)

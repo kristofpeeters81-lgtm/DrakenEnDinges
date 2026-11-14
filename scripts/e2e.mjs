@@ -138,6 +138,15 @@ try {
     check(html.includes("connect-src 'none'"), 'veiligheidsregel (geen internetverbindingen) staat in de build');
   }
 
+  for (const f of ['manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'print/regelkaart.html', 'print/personageblad.html', 'print/fonts/luckiest-guy-latin-400-normal.woff2']) {
+    const res = await fetch(new URL(f, url));
+    check(res.ok, `${f} is bereikbaar`);
+  }
+  if (PROD) {
+    const sw = await (await fetch(new URL('sw.js', url))).text();
+    check(sw.includes('print/regelkaart.html') && sw.includes('icons/icon-512.png'), 'printbladen en icoontjes worden offline bewaard');
+  }
+
   console.log('Startscherm');
   await page.goto(url, { waitUntil: 'networkidle0' });
   await page.evaluate(() => localStorage.clear());

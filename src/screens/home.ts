@@ -49,6 +49,7 @@ export function renderHome(app: App): void {
         <button class="btn big" data-action="load">Spel laden uit bestand</button>
       </div>
       <p class="hint">Tip: bewaar uw spel na elke sessie als bestand (Drive, WhatsApp…). Dan zijt ge het nooit kwijt.</p>
+      <p class="print-links">Afdrukken: <a href="./print/regelkaart.html">regelkaart</a> · <a href="./print/personageblad.html">heldenblad</a></p>
     </section>`;
 
   app.root.onchange = null;

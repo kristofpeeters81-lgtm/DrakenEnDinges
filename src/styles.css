@@ -226,6 +226,16 @@ small {
   margin: 10px 0 0;
 }
 
+.print-links {
+  margin-top: 18px;
+  font-size: 19px;
+}
+
+.print-links a {
+  color: var(--accent);
+  font-weight: bold;
+}
+
 .intro {
   font-size: 24px;
   text-align: center;

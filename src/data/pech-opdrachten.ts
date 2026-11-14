@@ -1,5 +1,5 @@
 // Zotte pech en opdrachten (om een frietje te verdienen). Geen spoilerinhoud: de eerste 6 van elke lijst staan
-// ook op de achterkant van de regelkaart (print/regelkaart.html) — samen aanpassen.
+// ook op de achterkant van de regelkaart (public/print/regelkaart.html) — samen aanpassen.
 
 export const PECH = [
   'Uw haar wordt paars. En het blijft groeien.',
