@@ -14,6 +14,10 @@ De tablet-app is de verteller; niemand aan tafel kent het verhaal. Land: **Kakof
 - **SPOILERS**: papa speelt zelf mee. Echte verhaalinhoud (slechteriken, plannen, scènes, geheimen) schrijf je
   **altijd via een sub-agent** en toon je **nooit** in de chat, in commitberichten of in samenvattingen.
   Bouw en test met saaie placeholder-inhoud. Wereldnamen (Kakofonië, Scheetegem…) zijn géén spoilers.
+- **Werkwijze verborgen inhoud**: sub-agent schrijft JSON naar een map BUITEN de repo (scratchpad) →
+  `node scripts/encode-content.mjs <json> <naam>` → `src/content/<naam>.data.ts` (base64) → leesbare JSON verwijderen.
+  Nooit `*.data.ts` decoderen, tonen of in screenshots vastleggen; tests controleren enkel vorm en aantallen.
+  Toegang in code via `src/content/index.ts`.
 - **Geen AI** in de app, **alles gratis**, werkt **offline**. CSP `connect-src 'none'` in de build nooit verwijderen.
 - Bewaren = **spelbestand** (deelmenu Android / download) met versienummer; de browser-kopie is enkel een vangnet.
   Formaat wijzigen → `SAVE_VERSION` verhogen en een stap toevoegen in `migrate()` (oude bestanden moeten blijven werken).

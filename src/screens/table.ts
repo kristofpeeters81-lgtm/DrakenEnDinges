@@ -13,14 +13,23 @@ import {
   setPowerUsed,
   type Hero,
 } from '../game/state';
-import { actionOf, BOLT_ICON, DICE_ICON, escapeHtml, FRY_BAG_SVG, frySvg } from '../ui/dom';
+import { actionOf, BOLT_ICON, DICE_ICON, escapeHtml, FRY_BAG_SVG, frySvg, POT_SVG } from '../ui/dom';
 import { ask, confirmDialog, toast } from '../ui/dialog';
 import { openDice } from './dice';
+import { openEidastinkt, openOracle, openPrikkel, oracleHistory } from './oracle';
 
 function fries(hero: Hero): string {
   let icons = '';
   for (let i = 0; i < Math.max(hero.fries, 3); i++) icons += frySvg(i < hero.fries);
   return icons;
+}
+
+function oracleLog(): string {
+  const items = oracleHistory();
+  if (items.length === 0) return '';
+  return `<ul class="oracle-history">${items
+    .map((h) => `<li><span class="h-q">${h.question ? `“${escapeHtml(h.question)}”` : 'Vraag'}</span> <b class="${h.yes ? 'yes' : 'no'}">${escapeHtml(h.label)}</b></li>`)
+    .join('')}</ul>`;
 }
 
 function heroCard(hero: Hero, isTurn: boolean): string {
@@ -83,9 +92,19 @@ export function renderTable(app: App): void {
             </div>`
           : ''
       }
-      <div class="story-placeholder">
-        <b>Hier komt straks het verhaal.</b> Tot dan: speel met de regelkaart en het orakel op papier.
-      </div>
+      <section class="story-tools">
+        <div class="story-pot">${POT_SVG}</div>
+        <div class="story-main">
+          <h2>Wat gebeurt er nu?</h2>
+          <p>Vertel het samen. Weet niemand het? Vraag het aan de Pruttelpot.</p>
+          <div class="story-buttons">
+            <button class="btn big primary" data-action="oracle">Vraag de Pruttelpot</button>
+            <button class="btn" data-action="prikkel">Zotte prikkel</button>
+            <button class="btn eida" data-action="eida">Eidastinkt!</button>
+          </div>
+          ${oracleLog()}
+        </div>
+      </section>
       <div class="card-grid">${present.map((h) => heroCard(h, current?.id === h.id)).join('')}</div>
     </section>`;
 
@@ -126,6 +145,15 @@ export function renderTable(app: App): void {
         }
         case 'stop':
           await stopSession(app);
+          break;
+        case 'oracle':
+          openOracle(app);
+          break;
+        case 'prikkel':
+          openPrikkel(app);
+          break;
+        case 'eida':
+          openEidastinkt(app);
           break;
       }
     } catch (err) {

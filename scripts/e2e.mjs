@@ -193,6 +193,52 @@ try {
   check((await page.$$eval('.table-card .power.used', (els) => els.length)) === 1, 'kracht van Mie staat op gebruikt');
   await shot('speeltafel-na-beurt');
 
+  console.log('Orakel (Pruttelpot)');
+  const turnBefore = await text('.turn-name');
+  await click('[data-action="oracle"]');
+  await page.waitForSelector('.oracle-panel.mode-setup');
+  await page.type('input[data-field="question"]', 'Is er een geheime deur?');
+  await click('[data-action="likely"][data-id="waarschijnlijk"]');
+  await shot('orakel-vraag');
+  await click('[data-action="real"]');
+  await page.waitForSelector('.oracle-panel.mode-enter');
+  await click('[data-action="pip"][data-id="2"]');
+  await click('[data-action="pip"][data-id="5"]');
+  await page.waitForSelector('.oracle-panel.mode-result');
+  check((await text('.answer')) === 'Ja.', 'waarschijnlijk met 2 en 5: hoogste telt, antwoord "Ja."');
+  check((await text('.question')).includes('geheime deur'), 'de vraag staat groot bij het antwoord');
+  await click('[data-action="again"]');
+  await page.waitForSelector('.oracle-panel.mode-setup');
+  check((await page.$eval('input[data-field="question"]', (el) => el.value)) === '', 'nog een vraag: leeg vraagveld');
+  await click('[data-action="real"]');
+  await click('[data-action="pip"][data-id="1"]');
+  await page.waitForSelector('.oracle-panel.mode-result');
+  check((await text('.answer')).startsWith('Nee, en'), '50/50 met 1: "Nee, en het is nog erger"');
+  check((await page.$('.prikkel-inline')) !== null, 'bij "…en" komt er een zotte prikkel bij');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.answer')).opacity === '1');
+  await shot('orakel-antwoord');
+  await click('[data-action="again"]');
+  await click('[data-action="app-roll"]');
+  await page.waitForSelector('.oracle-panel.mode-result', { timeout: 4000 });
+  check((await text('.answer')).length > 0, 'de pot pruttelt ook zelf een antwoord');
+  await click('.oracle-panel .dice-actions [data-action="close"]');
+  await page.waitForSelector('#overlay', { hidden: true });
+  check((await page.$$('.oracle-history li')).length === 3, 'de laatste 3 antwoorden staan op de speeltafel');
+  check((await text('.turn-name')) === turnBefore, 'het orakel verandert de beurt niet');
+
+  await click('[data-action="prikkel"]');
+  await page.waitForSelector('.prikkel-big');
+  check((await text('.prikkel-big')).trim().split(' ').length === 2, 'zotte prikkel = twee woorden');
+  await click('.oracle-panel [data-action="close"].btn');
+  await page.waitForSelector('#overlay', { hidden: true });
+
+  // Eidastinkt: verborgen inhoud. Enkel controleren dat er iets verschijnt, nooit tonen of fotograferen.
+  await click('[data-action="eida"]');
+  await page.waitForSelector('.eida-event');
+  check((await text('.eida-event')).length > 10, 'Eidastinkt! toont een voorval (inhoud niet getoond)');
+  await click('.eida-panel [data-action="close"].btn');
+  await page.waitForSelector('#overlay', { hidden: true });
+
   console.log('Bewaren en laden');
   check((await text('[data-action="save"]')).includes('Bewaren!'), 'bewaar-knop valt op bij niet-bewaarde wijzigingen');
   await click('[data-action="save"]');

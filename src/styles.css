@@ -471,13 +471,204 @@ small {
   font-size: 40px;
 }
 
-.story-placeholder {
-  border: 3px dashed var(--line);
+.story-tools {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border: 3px solid var(--ink);
   border-radius: var(--radius);
-  padding: 16px 18px;
+  padding: 14px 18px;
   margin-bottom: 18px;
+}
+
+.story-pot .pot {
+  width: 120px;
+  height: 112px;
+  margin-right: 18px;
+  flex: none;
+}
+
+.story-main {
+  flex: 1;
+}
+
+.story-main h2 {
+  font-size: 26px;
+}
+
+.story-main p {
+  margin: 4px 0 8px;
+}
+
+.story-buttons .btn {
+  margin: 4px 10px 4px 0;
+}
+
+.btn.eida {
+  background: #bef264;
+}
+
+.oracle-history {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.oracle-history li {
+  border-top: 1px dashed var(--line);
+  padding: 3px 0;
+}
+
+.oracle-history .h-q {
   color: var(--soft);
-  text-align: center;
+}
+
+.yes {
+  color: var(--ok);
+}
+
+.no {
+  color: var(--nok);
+}
+
+/* De Pruttelpot */
+.pot .bubbles circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bubble 2.6s ease-in infinite;
+}
+
+.pot .bubbles .b2 {
+  animation-delay: 0.8s;
+}
+
+.pot .bubbles .b3 {
+  animation-delay: 1.6s;
+}
+
+@keyframes bubble {
+  0% {
+    transform: translateY(14px) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px) scale(1);
+    opacity: 0;
+  }
+}
+
+.bubbling .pot {
+  animation: wobble 0.25s linear infinite;
+}
+
+.bubbling .pot .bubbles circle {
+  animation-duration: 0.7s;
+}
+
+@keyframes wobble {
+  0% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+  100% {
+    transform: rotate(-4deg);
+  }
+}
+
+.pot-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+}
+
+.pot-head .pot {
+  width: 96px;
+  height: 90px;
+  margin-right: 14px;
+}
+
+.pot-head h2 {
+  margin: 0;
+}
+
+.pot-head .explain {
+  margin: 4px 0 0;
+}
+
+.pot-big .pot {
+  width: 150px;
+  height: 140px;
+}
+
+.oracle-q {
+  max-width: 620px;
+  margin: 14px auto 0;
+  text-align: left;
+}
+
+.question {
+  font-size: 26px;
+  margin: 6px 0;
+}
+
+.answer {
+  font-family: var(--title);
+  font-size: 56px;
+  line-height: 1.05;
+  margin: 8px 0 6px;
+  animation: pop 0.35s ease-out;
+}
+
+.quip {
+  font-size: 24px;
+  margin: 0 0 4px;
+}
+
+.prikkel-inline {
+  background: #ecfccb;
+  border-radius: 12px;
+  display: inline-block;
+  padding: 6px 14px;
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+
+.oracle-panel .dice-row .die {
+  width: 64px;
+  height: 64px;
+}
+
+.prikkel-big {
+  font-family: var(--title);
+  font-size: 54px;
+  margin: 18px 0;
+  color: var(--accent);
+}
+
+.eida-panel {
+  background: #ecfccb;
+}
+
+.eida-shout {
+  font-family: var(--title);
+  font-size: 60px;
+  margin: 10px 0 6px;
+  color: #3f6212;
+  animation: pop 0.35s ease-out;
+}
+
+.eida-event {
+  font-size: 30px;
+  line-height: 1.3;
+  margin: 8px auto 6px;
+  max-width: 680px;
 }
 
 .table-card.turn {
@@ -912,6 +1103,21 @@ small {
     min-width: 0;
     flex: 1 1 40%;
   }
+  .story-tools {
+    display: block;
+    text-align: center;
+  }
+  .story-pot .pot {
+    margin: 0 auto;
+  }
+  .answer,
+  .eida-shout,
+  .prikkel-big {
+    font-size: 38px;
+  }
+  .eida-event {
+    font-size: 23px;
+  }
   .topbar .btn {
     font-size: 16px;
     min-height: 44px;
@@ -928,7 +1134,11 @@ small {
 @media (prefers-reduced-motion: reduce) {
   .btn.save.dirty,
   .rolling .die,
-  .verdict {
+  .verdict,
+  .answer,
+  .eida-shout,
+  .pot,
+  .pot .bubbles circle {
     animation: none;
   }
 }

@@ -30,6 +30,17 @@
 - **Gebruiken** bij de kracht: zet ze op "gebruikt" voor deze sessie (nog eens tikken = terugzetten).
 - Elke nieuwe sessie: iedereen weer 3 frietjes en een ongebruikte kracht.
 
+## Wat gebeurt er nu? (de Pruttelpot)
+- **Vraag de Pruttelpot**: het orakel van Kakofonië. Stel een ja/nee-vraag (typen mag, hardop zeggen ook),
+  kies *waarschijnlijk / geen idee / onwaarschijnlijk* en laat de pot pruttelen, of rol echt.
+  Antwoorden: *Nee, en… · Nee · Nee, maar… · Ja, maar… · Ja · Ja, en…* (zoals op de regelkaart).
+  Bij "…en" en "…maar" krijg je er een **zotte prikkel** bij: twee woorden om samen iets te verzinnen.
+- **Zotte prikkel**: altijd twee nieuwe woorden als jullie vastzitten.
+- **Eidastinkt!**: wordt het saai? Tik erop en er gebeurt iets zot (lees het voor). Niemand kent ze op voorhand;
+  ze komen pas terug als ze allemaal geweest zijn.
+- Het orakel telt **niet** als worp: iedereen mag altijd een vraag stellen, de beurt verandert niet.
+- De laatste 3 antwoorden blijven op de speeltafel staan (alleen tijdens deze speelavond).
+
 ## Bewaren (belangrijk!)
 - De knop **Bewaren!** wordt geel en wiebelt zolang er iets niet als bestand bewaard is.
 - Bewaren opent het **deelmenu** van de tablet: kies Google Drive, WhatsApp (naar jezelf) of e-mail.

@@ -63,4 +63,19 @@ export function frySvg(full: boolean): string {
 
 export const DICE_ICON = `<svg class="ico" viewBox="0 0 40 40" aria-hidden="true"><rect x="4" y="4" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="3"/><g fill="currentColor"><circle cx="13" cy="13" r="3.2"/><circle cx="27" cy="13" r="3.2"/><circle cx="20" cy="20" r="3.2"/><circle cx="13" cy="27" r="3.2"/><circle cx="27" cy="27" r="3.2"/></g></svg>`;
 
+/** De Pruttelpot: het orakel van Kakofonië (een toverpot met een gezicht en borrelende bubbels). */
+export const POT_SVG = `<svg class="pot" viewBox="0 0 120 112" aria-hidden="true">
+  <g class="bubbles" fill="#bef264" stroke="#1d1a16" stroke-width="2.5">
+    <circle class="b1" cx="44" cy="28" r="6"/><circle class="b2" cx="62" cy="18" r="8"/><circle class="b3" cx="80" cy="30" r="5"/>
+  </g>
+  <path d="M8 58 C0 58 0 74 12 72" fill="none" stroke="#1d1a16" stroke-width="5" stroke-linecap="round"/>
+  <path d="M112 58 C120 58 120 74 108 72" fill="none" stroke="#1d1a16" stroke-width="5" stroke-linecap="round"/>
+  <path d="M14 48 C14 94 30 106 60 106 C90 106 106 94 106 48 Z" fill="#57534e" stroke="#1d1a16" stroke-width="4" stroke-linejoin="round"/>
+  <rect x="7" y="40" width="106" height="11" rx="5.5" fill="#78716c" stroke="#1d1a16" stroke-width="4"/>
+  <ellipse cx="60" cy="41" rx="46" ry="5" fill="#a3e635"/>
+  <g class="eyes"><circle cx="45" cy="70" r="8.5" fill="#fff"/><circle cx="75" cy="70" r="8.5" fill="#fff"/>
+  <circle cx="47" cy="72" r="3.8" fill="#1d1a16"/><circle cx="77" cy="72" r="3.8" fill="#1d1a16"/></g>
+  <path d="M50 88 Q60 96 70 88" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+</svg>`;
+
 export const BOLT_ICON = `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 Z" fill="#fde68a" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
