@@ -155,6 +155,7 @@ Alles wordt opgeslagen op de tablet (met exportknop als back-up).
 | 6 ✅ | Gebouwd 2026-11-14: keuze per toestel (localStorage). Om de beurt = voorlezer (speler van wie aan de beurt is) + 1 op 3 keer een stemmetje-opdracht; app-stem = knop 🔊 met nl-BE/nl-NL-stem via speechSynthesis. Bij beginscène, scènes (scène 1 mét "Vorige keer"), moment, uitslag, finale, Eidastinkt en vondsten | Beide modi in de browsertest |
 | 6 | **Voorleesmodus** (om beurt / app-stem) | Wisselen werkt, de stem leest Nederlands |
 | 7 | **Echte inhoud** (spoilervrij, via sub-agent, in porties) | Seizoen 1 speelbaar |
+| 8 (deels ✅) | App-icoontjes (PNG + maskable), printbladen in de app met eigen lettertypes (offline), `docs/TESTPROTOCOL.md` voor de eerste speelavonden. Open: sterren + winkeltje (groei) | Installeren + vliegtuigmodus-test (zie testprotocol) |
 | 8 | **Afwerking**: tv-weergave, offline, GitHub Pages, testprotocol | Eerste echte speelavond |
 
 ## 6b. Toekomstidee (niet beslist): groeien richting D&D / Pathfinder
