@@ -1,7 +1,37 @@
 // Toegang tot de verborgen inhoud. Alles wordt pas gedecodeerd op het moment dat het nodig is.
 
 import { decodeContent, isStringList } from './codec';
+import { DATA as BEGINSCENES } from './beginscenes.data';
 import { DATA as EIDASTINKT } from './eidastinkt.data';
+
+export interface Opening {
+  titel: string;
+  tekst: string;
+}
+
+function isOpeningList(v: unknown): v is Opening[] {
+  return (
+    Array.isArray(v) &&
+    v.every((o: unknown) => typeof o === 'object' && o !== null && typeof (o as Opening).titel === 'string' && typeof (o as Opening).tekst === 'string')
+  );
+}
+
+let openings: Opening[] | null = null;
+
+function allOpenings(): Opening[] {
+  if (!openings) openings = decodeContent(BEGINSCENES, isOpeningList);
+  return openings;
+}
+
+export function openingCount(): number {
+  return allOpenings().length;
+}
+
+/** De beginscène met dit nummer, of null als die niet (meer) bestaat. */
+export function getOpening(index: number | null): Opening | null {
+  if (index === null) return null;
+  return allOpenings()[index] ?? null;
+}
 
 let events: string[] | null = null;
 let deck: number[] = [];

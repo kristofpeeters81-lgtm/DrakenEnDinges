@@ -1,7 +1,8 @@
 // Heldenscherm: wie speelt er mee vandaag, helden aanmaken/aanpassen/verwijderen, sessie starten.
 
 import { requireGame, saveButton, topbar, type App } from '../app';
-import { hasUnsavedChanges, MAX_HEROES, presentHeroes, removeHero, setPresent, startSession, type Hero } from '../game/state';
+import { openingCount } from '../content';
+import { chooseOpening, hasUnsavedChanges, MAX_HEROES, presentHeroes, removeHero, setPresent, startSession, type Hero } from '../game/state';
 import { actionOf, escapeHtml } from '../ui/dom';
 import { confirmDialog, toast } from '../ui/dialog';
 
@@ -85,7 +86,10 @@ export function renderHeroes(app: App): void {
           break;
         }
         case 'start':
-          if (!game.sessionActive) startSession(game);
+          if (!game.sessionActive) {
+            startSession(game);
+            chooseOpening(game, openingCount());
+          }
           app.changed();
           app.go({ name: 'table' });
           break;

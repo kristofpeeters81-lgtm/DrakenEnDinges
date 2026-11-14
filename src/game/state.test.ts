@@ -4,6 +4,7 @@ import {
   addFry,
   addHero,
   canRoll,
+  chooseOpening,
   currentHero,
   eatFry,
   emptyDraft,
@@ -192,6 +193,35 @@ describe('één worp per beurt', () => {
     expect(canRoll(g, b.id)).toBe(false);
     g.sessionActive = false;
     expect(canRoll(g, a.id)).toBe(false);
+  });
+});
+
+describe('beginscènes', () => {
+  it('kiest pas opnieuw dezelfde als alles geweest is', () => {
+    const g = newGame();
+    const seen: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      chooseOpening(g, 5);
+      seen.push(g.opening ?? -1);
+    }
+    expect([...seen].sort()).toEqual([0, 1, 2, 3, 4]);
+    chooseOpening(g, 5);
+    expect(g.opening).not.toBe(seen[4]);
+  });
+
+  it('"andere beginscène" geeft nooit dezelfde', () => {
+    const g = newGame();
+    for (let i = 0; i < 50; i++) {
+      const before = g.opening;
+      chooseOpening(g, 3);
+      expect(g.opening).not.toBe(before);
+    }
+  });
+
+  it('zonder beginscènes: geen', () => {
+    const g = newGame();
+    chooseOpening(g, 0);
+    expect(g.opening).toBeNull();
   });
 });
 

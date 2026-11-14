@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { decodeContent, isStringList } from './codec';
-import { drawEidastinkt, eidastinktCount } from './index';
+import { drawEidastinkt, eidastinktCount, getOpening, openingCount } from './index';
 
 function encode(value: unknown): string {
   let binary = '';
@@ -20,6 +20,18 @@ describe('verborgen inhoud', () => {
   it('weigert inhoud met een verkeerde vorm', () => {
     const encoded = encode([1, 2]);
     expect(() => decodeContent(encoded, isStringList)).toThrow();
+  });
+
+  it('er zijn minstens 30 beginscènes met titel en tekst', () => {
+    const n = openingCount();
+    expect(n >= 30).toBe(true);
+    let bad = 0;
+    for (let i = 0; i < n; i++) {
+      const o = getOpening(i);
+      if (!o || o.titel.trim().length === 0 || o.titel.length > 40 || o.tekst.length < 200 || o.tekst.length > 650) bad++;
+    }
+    expect(bad).toBe(0);
+    expect(getOpening(n) === null).toBe(true);
   });
 
   it('er zijn genoeg Eidastinkt-voorvallen', () => {

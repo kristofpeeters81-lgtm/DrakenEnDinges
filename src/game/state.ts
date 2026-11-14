@@ -39,6 +39,10 @@ export interface Game {
   heroes: Hero[];
   /** Moment van de laatste keer bewaren als bestand (null = nog nooit). */
   lastFileSave: number | null;
+  /** Beginscène van de huidige sessie (index in de verborgen lijst), of null. */
+  opening: number | null;
+  /** Beginscènes die al geweest zijn (pas als alles geweest is, komen ze terug). */
+  usedOpenings: number[];
 }
 
 export function newId(rng: () => number = Math.random): string {
@@ -46,7 +50,7 @@ export function newId(rng: () => number = Math.random): string {
 }
 
 export function newGame(now: number = Date.now()): Game {
-  return { id: newId(), createdAt: now, updatedAt: now, session: 0, sessionActive: false, turn: 0, heroes: [], lastFileSave: null };
+  return { id: newId(), createdAt: now, updatedAt: now, session: 0, sessionActive: false, turn: 0, heroes: [], lastFileSave: null, opening: null, usedOpenings: [] };
 }
 
 export function emptyDraft(): HeroDraft {
@@ -163,6 +167,26 @@ export function startSession(game: Game): void {
     hero.powerUsed = false;
     hero.rolled = false;
   }
+  touch(game);
+}
+
+/** Kiest een beginscène die nog niet geweest is (uit `count` mogelijke). Zijn ze allemaal geweest: opnieuw beginnen. */
+export function chooseOpening(game: Game, count: number, rng: () => number = Math.random): void {
+  if (count <= 0) {
+    game.opening = null;
+    return;
+  }
+  let free = [];
+  for (let i = 0; i < count; i++) if (!game.usedOpenings.includes(i) && i !== game.opening) free.push(i);
+  if (free.length === 0) {
+    game.usedOpenings = game.opening === null ? [] : [game.opening];
+    free = [];
+    for (let i = 0; i < count; i++) if (i !== game.opening) free.push(i);
+    if (free.length === 0) free = [0];
+  }
+  const pick = free[Math.floor(rng() * free.length)];
+  game.opening = pick;
+  if (!game.usedOpenings.includes(pick)) game.usedOpenings.push(pick);
   touch(game);
 }
 

@@ -471,6 +471,50 @@ small {
   font-size: 40px;
 }
 
+.opening {
+  background: #fff7e6;
+  border: 3px solid var(--ink);
+  border-left: 12px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin-bottom: 18px;
+}
+
+.opening-label {
+  font-family: var(--title);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.opening h3.opening-title {
+  font-size: 30px;
+  margin: 4px 0 8px;
+}
+
+.opening-text {
+  font-size: 24px;
+  line-height: 1.4;
+  margin: 0 0 10px;
+}
+
+.opening-actions .btn {
+  margin: 4px 10px 0 0;
+}
+
+.opening.collapsed {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+}
+
+.opening.collapsed .opening-label,
+.opening.collapsed .opening-title {
+  margin-right: 10px;
+}
+
 .story-tools {
   display: flex;
   align-items: center;
@@ -1117,6 +1161,12 @@ small {
   }
   .eida-event {
     font-size: 23px;
+  }
+  .opening-text {
+    font-size: 20px;
+  }
+  .opening h3.opening-title {
+    font-size: 24px;
   }
   .topbar .btn {
     font-size: 16px;

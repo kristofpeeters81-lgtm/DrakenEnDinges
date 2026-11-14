@@ -5,7 +5,7 @@
 import { MAX_FRIES, MAX_HEROES, type Game, type Hero } from './state';
 
 export const APP_ID = 'draken-en-dinges';
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export class SaveError extends Error {}
 
@@ -38,10 +38,17 @@ export function parseGame(text: string): Game {
 function migrate(game: unknown, fromVersion: number): unknown {
   let g = game;
   if (fromVersion < 2) g = v1ToV2(g);
+  if (fromVersion < 3) g = v2ToV3(g);
   return g;
 }
 
 /** Versie 2: helden kregen een "rolled"-slot (één worp per beurt). Oude spellen: nog niemand heeft gerold. */
+/** Versie 3: beginscènes (welke nu, welke al geweest). Oude spellen: nog geen. */
+function v2ToV3(game: unknown): unknown {
+  if (!isRecord(game)) return game;
+  return { ...game, opening: null, usedOpenings: [] };
+}
+
 function v1ToV2(game: unknown): unknown {
   if (!isRecord(game) || !Array.isArray(game.heroes)) return game;
   return { ...game, heroes: game.heroes.map((h: unknown) => (isRecord(h) ? { ...h, rolled: false } : h)) };
@@ -93,6 +100,17 @@ function readHero(v: unknown): Hero {
   };
 }
 
+function readOpening(v: unknown): number | null {
+  if (v === null) return null;
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 9999) broken();
+  return v;
+}
+
+function readUsed(v: unknown): number[] {
+  if (!Array.isArray(v) || v.length > 10000) broken();
+  return v.map((n: unknown) => (typeof n === 'number' && Number.isInteger(n) && n >= 0 ? n : broken()));
+}
+
 function readGame(v: unknown): Game {
   if (!isRecord(v) || !Array.isArray(v.heroes)) broken();
   const heroes = v.heroes.map(readHero);
@@ -108,5 +126,7 @@ function readGame(v: unknown): Game {
     turn: num(v, 'turn', 0, MAX_HEROES),
     heroes,
     lastFileSave: last,
+    opening: readOpening(v.opening),
+    usedOpenings: readUsed(v.usedOpenings),
   };
 }

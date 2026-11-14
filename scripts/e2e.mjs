@@ -41,6 +41,12 @@ page.on('pageerror', (err) => {
 // Desktop-Windows kent ook een deelmenu: in de test altijd de download-route gebruiken.
 await page.evaluateOnNewDocument(() => {
   Object.defineProperty(Navigator.prototype, 'canShare', { value: undefined, configurable: true });
+  // Spoilerregel: verborgen inhoud wazig maken, zodat ze nooit leesbaar in een screenshot staat.
+  document.addEventListener('DOMContentLoaded', () => {
+    const style = document.createElement('style');
+    style.textContent = '.opening-text, .opening-title, .eida-event { filter: blur(7px) !important; }';
+    document.head.appendChild(style);
+  });
 });
 const cdp = await page.createCDPSession();
 await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: DOWNLOADS });
@@ -123,6 +129,20 @@ try {
   await page.waitForSelector('.turn-banner');
   check((await text('.turn-name')) === hero1, 'held 1 is eerst aan de beurt');
   check((await page.$$('.table-card')).length === 2, 'enkel meespelende helden op tafel');
+
+  // Beginscène: inhoud nooit tonen, enkel vergelijken
+  const opening1 = await text('.opening-text');
+  check(opening1.length > 150, 'bij de start staat er een beginscène (inhoud niet getoond)');
+  await click('[data-action="opening-other"]');
+  await click('#dialog-buttons [data-value="yes"]');
+  await page.waitForFunction((prev) => document.querySelector('.opening-text')?.textContent !== prev, {}, opening1);
+  check(true, '"Andere beginscène" geeft een andere');
+  await click('[data-action="opening-toggle"]');
+  await page.waitForSelector('.opening.collapsed');
+  check((await page.$('.opening-text')) === null, 'beginscène kan ingeklapt worden');
+  await click('[data-action="opening-toggle"]');
+  await page.waitForSelector('.opening-text');
+  const openingKept = await text('.opening-text');
   await shot('speeltafel');
 
   const cardButton = (i) => page.$$eval('.table-card', (cards, n) => cards[n].querySelector('.roll-small')?.textContent ?? '', i);
@@ -249,7 +269,7 @@ try {
   }
   check(file !== null && file !== undefined, `spelbestand gedownload (${file})`);
   const saved = JSON.parse(fs.readFileSync(path.join(DOWNLOADS, file), 'utf8'));
-  check(saved.app === 'draken-en-dinges' && saved.version === 2, 'bestand heeft app-naam en versie');
+  check(saved.app === 'draken-en-dinges' && saved.version === 3, 'bestand heeft app-naam en versie (3)');
   check(saved.game.heroes.length === 3, 'bestand bevat alle 3 de helden (ook de gast)');
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
@@ -283,6 +303,7 @@ try {
   await click('[data-action="start"]');
   await page.waitForSelector('.turn-banner');
   check((await text('.turn-name')) === 'Mie Mosselman', 'beurt is bewaard gebleven');
+  check((await text('.opening-text')) === openingKept, 'beginscène is bewaard gebleven');
   const friesAfter = await page.$$eval('.table-card .fries-label b', (els) => els.map((e) => e.textContent));
   check(friesAfter.join(',') === '2,3', `frietjes bewaard gebleven (${friesAfter.join(',')})`);
 

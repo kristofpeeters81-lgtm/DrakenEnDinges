@@ -54,6 +54,25 @@ describe('spelbestand', () => {
     expect(loaded.heroes.map((h) => h.name)).toEqual(['Gerard', 'Mie']);
   });
 
+  it('een bestand van versie 2 krijgt lege beginscène-gegevens', () => {
+    const raw = JSON.parse(serializeGame(sampleGame())) as { version: number; game: Record<string, unknown> };
+    raw.version = 2;
+    delete raw.game.opening;
+    delete raw.game.usedOpenings;
+    const loaded = parseGame(JSON.stringify(raw));
+    expect(loaded.opening).toBeNull();
+    expect(loaded.usedOpenings).toEqual([]);
+  });
+
+  it('bewaart welke beginscène nu speelt en welke al geweest zijn', () => {
+    const g = sampleGame();
+    g.opening = 4;
+    g.usedOpenings = [2, 4];
+    const loaded = parseGame(serializeGame(g));
+    expect(loaded.opening).toBe(4);
+    expect(loaded.usedOpenings).toEqual([2, 4]);
+  });
+
   it('bestandsnaam met datum, als .txt (deelbaar via Android)', () => {
     expect(saveFileName(new Date(2026, 10, 14, 20, 5))).toBe('Draken en Dinges - 2026-11-14 20.05.txt');
   });

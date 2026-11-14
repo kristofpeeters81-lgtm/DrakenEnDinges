@@ -30,6 +30,12 @@
 - **Gebruiken** bij de kracht: zet ze op "gebruikt" voor deze sessie (nog eens tikken = terugzetten).
 - Elke nieuwe sessie: iedereen weer 3 frietjes en een ongebruikte kracht.
 
+## Beginscène
+- Bij **Start sessie** kiest de app een **beginscène**: lees ze hardop voor, daarna nemen jullie het over.
+  Er zijn er 30; niemand kent ze op voorhand. Een beginscène komt pas terug als ze alle 30 geweest zijn.
+- **Andere beginscène**: als jullie er eentje niet leuk vinden. **Verbergen** klapt ze in (en **Toon** weer open).
+- Tussenoplossing: vanaf het echte seizoensverhaal (blok 4–5) neemt het verhaal deze plaats over.
+
 ## Wat gebeurt er nu? (de Pruttelpot)
 - **Vraag de Pruttelpot**: het orakel van Kakofonië. Stel een ja/nee-vraag (typen mag, hardop zeggen ook),
   kies *waarschijnlijk / geen idee / onwaarschijnlijk* en laat de pot pruttelen, of rol echt.
