@@ -1,7 +1,17 @@
 // Spelbestand naar buiten brengen en terug inlezen.
-// Bewaren: via het deelmenu van Android (Drive, WhatsApp, e-mail…) als dat kan, anders als download.
+// Bewaren: de gebruiker kiest zelf: op het toestel (Downloads) of via het deelmenu (Drive, WhatsApp, e-mail…).
 
 export type ExportResult = 'gedeeld' | 'gedownload' | 'geannuleerd';
+export type ExportMode = 'share' | 'download';
+
+function textFile(text: string, fileName: string): File {
+  return new File([text], fileName, { type: 'text/plain' });
+}
+
+/** Kan dit toestel bestanden delen via het deelmenu? (Android/Chrome via https: ja; testen op pc: meestal niet.) */
+export function canShareFiles(): boolean {
+  return typeof navigator.canShare === 'function' && navigator.canShare({ files: [textFile('test', 'test.txt')] });
+}
 
 function download(file: File): void {
   const url = URL.createObjectURL(file);
@@ -14,9 +24,9 @@ function download(file: File): void {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-export async function exportTextFile(text: string, fileName: string): Promise<ExportResult> {
-  const file = new File([text], fileName, { type: 'text/plain' });
-  if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+export async function exportTextFile(text: string, fileName: string, mode: ExportMode): Promise<ExportResult> {
+  const file = textFile(text, fileName);
+  if (mode === 'share' && canShareFiles()) {
     try {
       await navigator.share({ files: [file], title: 'Draken & Dinges — spelbestand' });
       return 'gedeeld';

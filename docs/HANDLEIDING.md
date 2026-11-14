@@ -35,7 +35,7 @@
   kies *waarschijnlijk / geen idee / onwaarschijnlijk* en laat de pot pruttelen, of rol echt.
   Antwoorden: *Nee, en… · Nee · Nee, maar… · Ja, maar… · Ja · Ja, en…* (zoals op de regelkaart).
   Bij "…en" en "…maar" krijg je er een **zotte prikkel** bij: twee woorden om samen iets te verzinnen.
-- **Zotte prikkel**: altijd twee nieuwe woorden als jullie vastzitten.
+- **Zotte prikkel**: altijd twee nieuwe woorden als jullie vastzitten (40 × 40 = 1600 combinaties, nooit twee keer na elkaar dezelfde).
 - **Eidastinkt!**: wordt het saai? Tik erop en er gebeurt iets zot (lees het voor). Niemand kent ze op voorhand;
   ze komen pas terug als ze allemaal geweest zijn.
 - Het orakel telt **niet** als worp: iedereen mag altijd een vraag stellen, de beurt verandert niet.
@@ -43,8 +43,12 @@
 
 ## Bewaren (belangrijk!)
 - De knop **Bewaren!** wordt geel en wiebelt zolang er iets niet als bestand bewaard is.
-- Bewaren opent het **deelmenu** van de tablet: kies Google Drive, WhatsApp (naar jezelf) of e-mail.
-  Kan dat niet, dan komt het bestand in **Downloads**. Het bestand heet bv. `Draken en Dinges - 2026-11-14 20.15.txt`.
+- Bewaren vraagt **waar** het bestand naartoe moet:
+  - **Op deze tablet (Downloads)**: terug te vinden in de app **Bestanden** › **Downloads**.
+  - **Delen (Drive, WhatsApp…)**: kies in het deelmenu bv. Google Drive of WhatsApp (naar jezelf).
+    Het deelmenu wegtikken = niet bewaard.
+- Het bestand heet bv. `Draken en Dinges - 2026-11-14 20.15.txt`; de app toont na het bewaren de exacte naam.
+- **Laden**: startscherm › *Spel laden uit bestand* › kies het bestand (Downloads, Drive…).
 - Bij **Stop sessie** vraagt de app om te bewaren.
 - De app houdt ook automatisch een kopie bij op de tablet, maar die kan verdwijnen (cache wissen, andere browser).
   **Het bestand is de echte bewaarplaats.**

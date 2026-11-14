@@ -6,14 +6,14 @@ import './styles.css';
 import type { App, Screen } from './app';
 import { saveFileName, serializeGame } from './game/save';
 import { markFileSaved, type Game } from './game/state';
-import { exportTextFile } from './platform/file';
+import { canShareFiles, exportTextFile, type ExportMode } from './platform/file';
 import { renderEditor } from './screens/editor';
 import { renderHeroes } from './screens/heroes';
 import { renderHome } from './screens/home';
 import { renderTable } from './screens/table';
 import { requestPersistence, writeAutosave } from './storage/autosave';
 import { $ } from './ui/dom';
-import { toast } from './ui/dialog';
+import { ask, toast } from './ui/dialog';
 
 const root = $('#app');
 let game: Game | null = null;
@@ -67,17 +67,29 @@ const app: App = {
   async saveToFile() {
     if (!game) return;
     const current = game;
+    let mode: ExportMode = 'download';
+    if (canShareFiles()) {
+      const choice = await ask('Waar wilt ge het spel bewaren?', [
+        { label: 'Delen (Drive, WhatsApp…)', value: 'share' },
+        { label: 'Op deze tablet (Downloads)', value: 'download', primary: true },
+      ]);
+      if (choice === null) return;
+      mode = choice === 'share' ? 'share' : 'download';
+    }
     // Eerst markeren, dan pas wegschrijven: zo staat "bewaard" ook in het bestand zelf. Lukt het niet: terugzetten.
     const before = current.lastFileSave;
     try {
       const now = new Date();
+      const fileName = saveFileName(now);
       markFileSaved(current, now.getTime());
-      const result = await exportTextFile(serializeGame(current, now.getTime()), saveFileName(now));
+      const result = await exportTextFile(serializeGame(current, now.getTime()), fileName, mode);
       if (result === 'geannuleerd') {
         current.lastFileSave = before;
         toast('Niet bewaard.');
+      } else if (result === 'gedeeld') {
+        toast(`Gedeeld: “${fileName}”. Bewaar het goed!`);
       } else {
-        toast(result === 'gedeeld' ? 'Gedeeld! Bewaar het bestand goed.' : 'Bewaard in uw Downloads.');
+        toast(`Bewaard in Downloads (app Bestanden): “${fileName}”`);
       }
     } catch {
       current.lastFileSave = before;

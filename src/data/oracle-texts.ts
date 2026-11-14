@@ -66,6 +66,26 @@ export const PROMPT_ADJECTIVES = [
   'harige',
   'vliegende',
   'deftige',
+  'kriebelende',
+  'knorrende',
+  'glimmende',
+  'beschimmelde',
+  'scheve',
+  'kletsnatte',
+  'pruttelende',
+  'opgeblazen',
+  'wiebelende',
+  'rammelende',
+  'verlegen',
+  'chique',
+  'onhandige',
+  'mysterieuze',
+  'gestreepte',
+  'bevroren',
+  'gloeiende',
+  'verdrietige',
+  'giechelende',
+  'snurkende',
 ] as const;
 
 export const PROMPT_NOUNS = [
@@ -89,14 +109,41 @@ export const PROMPT_NOUNS = [
   'onderbroek',
   'trompet',
   'badeend',
+  'wafel',
+  'kermispaard',
+  'frietkot',
+  'schoolbel',
+  'juf',
+  'accordeon',
+  'carnavalsmuts',
+  'pantoffel',
+  'nachtpot',
+  'tuinkabouter',
+  'stofzuiger',
+  'hamster',
+  'bompa',
+  'regenton',
+  'zeepbel',
+  'spruitje',
+  'muizenval',
+  'ballon',
+  'kroon',
+  'trampoline',
 ] as const;
 
-/** Twee woorden om iets zot mee te verzinnen, bv. "natte pollepel". */
+let lastPrikkel = '';
+
+/** Twee woorden om iets zot mee te verzinnen, bv. "natte pollepel". Nooit twee keer na elkaar dezelfde. */
 export function zottePrikkel(rng: () => number = Math.random): { adjective: string; noun: string } {
-  return {
-    adjective: PROMPT_ADJECTIVES[Math.floor(rng() * PROMPT_ADJECTIVES.length)],
-    noun: PROMPT_NOUNS[Math.floor(rng() * PROMPT_NOUNS.length)],
-  };
+  for (let attempt = 0; ; attempt++) {
+    const adjective = PROMPT_ADJECTIVES[Math.floor(rng() * PROMPT_ADJECTIVES.length)];
+    const noun = PROMPT_NOUNS[Math.floor(rng() * PROMPT_NOUNS.length)];
+    const key = `${adjective} ${noun}`;
+    if (key !== lastPrikkel || attempt >= 5) {
+      lastPrikkel = key;
+      return { adjective, noun };
+    }
+  }
 }
 
 export function quipFor(answer: Answer, rng: () => number = Math.random): string {

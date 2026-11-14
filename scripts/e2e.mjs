@@ -254,6 +254,22 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-action="save"]')?.textContent?.includes('Bewaard'));
   check(true, 'bewaar-knop toont "Bewaard"');
 
+  // Tablet met deelmenu nabootsen: Bewaren moet dan vragen waar het bestand naartoe moet.
+  await page.evaluate(() => {
+    Object.defineProperty(Navigator.prototype, 'canShare', { value: () => true, configurable: true });
+    Object.defineProperty(Navigator.prototype, 'share', { value: async () => undefined, configurable: true });
+  });
+  await click('[data-action="save"]');
+  await page.waitForSelector('#dialog:not([hidden])');
+  const choices = await page.$$eval('#dialog-buttons button', (els) => els.map((e) => e.textContent));
+  check(choices.some((c) => c.includes('Downloads')) && choices.some((c) => c.includes('Delen')), 'met deelmenu: keuze tussen Downloads en Delen');
+  await click('#dialog-buttons [data-value="share"]');
+  await page.waitForFunction(() => document.querySelector('#toast')?.textContent?.includes('Gedeeld'));
+  check((await text('#toast')).includes('.txt'), 'na delen toont de app de bestandsnaam');
+  await page.evaluate(() => {
+    Object.defineProperty(Navigator.prototype, 'canShare', { value: undefined, configurable: true });
+  });
+
   // Alles in de browser wissen → spel moet volledig terugkomen uit het bestand
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'networkidle0' });

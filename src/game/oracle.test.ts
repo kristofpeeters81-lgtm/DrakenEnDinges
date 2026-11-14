@@ -48,4 +48,19 @@ describe('het orakel', () => {
     expect(PROMPT_NOUNS.slice(0, 6)).toEqual(['sok', 'kip', 'pollepel', 'wc-rol', 'nonkel', 'pannenkoek']);
     expect(zottePrikkel(() => 0)).toEqual({ adjective: 'natte', noun: 'sok' });
   });
+
+  it('zotte prikkel: 40 × 40 verschillende woorden = 1600 combinaties', () => {
+    expect(new Set(PROMPT_ADJECTIVES).size).toBe(40);
+    expect(new Set(PROMPT_NOUNS).size).toBe(40);
+  });
+
+  it('zotte prikkel: nooit twee keer na elkaar dezelfde', () => {
+    let prev = '';
+    for (let i = 0; i < 500; i++) {
+      const p = zottePrikkel();
+      const key = `${p.adjective} ${p.noun}`;
+      expect(key).not.toBe(prev);
+      prev = key;
+    }
+  });
 });
