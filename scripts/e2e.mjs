@@ -462,6 +462,7 @@ try {
   await realRollInPanel(1);
   check((await page.$$('.story-log li')).length === 1, 'de actie staat in het verhaallogboek, met haar gevolg');
   check((await text('.turns b')) === '4', 'een beurt minder');
+  await page.waitForFunction((prev) => document.querySelector('.turn-name')?.textContent !== prev, { timeout: 3000 }, sceneTurn).catch(() => {});
   check((await text('.turn-name')) !== sceneTurn, 'na een actie gaat de beurt door');
 
   // Iets anders: eigen idee, de Pruttelpot beslist of het kan
@@ -561,18 +562,22 @@ try {
   check((await text('[data-action="start"]')).includes('Start sessie'), 'nieuwe sessie na een afgerond hoofdstuk');
   await click('[data-action="readmode"][data-id="stem"]');
   await page.waitForSelector('[data-action="readmode"][data-id="stem"].active');
-  await startSessionAs('seizoen');
   await page.evaluate(() => {
     window.__spoken = [];
     window.speechSynthesis.speak = (u) => window.__spoken.push(u.text.length);
   });
-  await click('.scene .read-btn');
+  await startSessionAs('seizoen');
+  await page.waitForFunction(() => window.__spoken.length > 0);
   const spoken = await page.evaluate(() => window.__spoken);
-  check(spoken.length === 1 && spoken[0] > 100, 'app-stem: "Lees voor" leest de scène voor (met "Vorige keer")');
+  check(spoken.length === 1 && spoken[0] > 100, 'app-stem: de scène wordt vanzelf voorgelezen (met "Vorige keer")');
+  await click('.scene .read-btn');
+  check((await page.evaluate(() => window.__spoken.length)) === 2, 'app-stem: "Nog eens" leest de scène opnieuw voor');
   check((await text('.chapter-label')).includes('Hoofdstuk 2 van 3'), 'volgende sessie = hoofdstuk 2');
   check((await page.$('.recap')) !== null, 'hoofdstuk 2 begint met "Vorige keer in Kakofonië"');
   await playScene(1);
   check((await page.$('.key-result.nok')) !== null, 'beurten op zonder succes: scène mislukt, het verhaal gaat toch verder');
+  // 5 acties (gevolg) + 4× "nu is … aan de beurt" + de afloop van de scène
+  check((await page.evaluate(() => window.__spoken.length)) === 2 + 5 + 4 + 1, 'app-stem: gevolg van elke actie, wie volgt en de afloop worden vanzelf voorgelezen');
   await click('[data-action="scene-next"]');
   await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
   if (await isTestStory()) check((await text('.scene-text')).includes('na MISLUKT'), 'vertakking: na een mislukte scène volgt de "mislukt"-wending');

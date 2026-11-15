@@ -9,6 +9,7 @@ import { askOracle, isYes, oracleDiceCount, type Likelihood, type OracleOutcome 
 import { actionFailed, actionSucceeded, canActIn, OWN_IDEA } from '../game/season';
 import { currentHero, nextTurn, recordSceneAction, type Game, type Hero } from '../game/state';
 import { toast } from '../ui/dialog';
+import { narrate } from '../ui/readaloud';
 import { actionOf, DICE_ICON, dieSvg, escapeHtml, POT_SVG, $ } from '../ui/dom';
 import { openDice } from './dice';
 
@@ -26,16 +27,21 @@ function announce(game: Game, outcome: boolean | null): void {
   else if (outcome === false) toast('De beurten zijn op… Lees hoe het afloopt.');
   else {
     const next = currentHero(game);
-    if (next) toast(`Nu is ${next.name} aan de beurt: wat doe je?`);
+    if (next) {
+      toast(`Nu is ${next.name} aan de beurt: wat doe je?`);
+      narrate(`Nu is ${next.name} aan de beurt.`);
+    }
   }
 }
 
 /** Rolt voor een actie; daarna logboek, voortgang en beurt door (het dobbelvenster geeft de beurt door). */
-function rollFor(app: App, hero: Hero, title: string, action: number, text: string): void {
+function rollFor(app: App, hero: Hero, title: string, action: number, text: string, result: (success: boolean) => string): void {
   const game = requireGame(app);
   openDice(app, hero.id, null, {
     title,
     after: (success) => {
+      // Met de app-stem: eerst het gevolg van de actie, daarna (vanzelf) de afloop van de scène als die er is.
+      narrate(`${hero.name}: ${result(success)}`);
       const outcome = recordSceneAction(game, hero.name, action, text, success);
       // De beurt gaat pas daarna door (in het dobbelvenster); de melding gaat dus over wie er nu volgt.
       window.setTimeout(() => announce(game, outcome), 0);
@@ -83,7 +89,7 @@ export function openActions(app: App): void {
       const a = scene.acties[i];
       if (!a || actionSucceeded(season, i)) return;
       overlay.onclick = null;
-      rollFor(app, hero, a.label, i, '');
+      rollFor(app, hero, a.label, i, '', (ok) => (ok ? a.gelukt : a.mislukt));
     }
   };
 }
@@ -144,9 +150,10 @@ function openOwnIdea(app: App, hero: Hero): void {
       case 'own-roll':
         overlay.onclick = null;
         overlay.oninput = null;
-        rollFor(app, hero, s.text.trim(), OWN_IDEA, s.text.trim());
+        rollFor(app, hero, s.text.trim(), OWN_IDEA, s.text.trim(), (ok) => (ok ? 'het lukt!' : 'het lukt niet.'));
         return;
       case 'own-no': {
+        narrate(`${hero.name}: dat kan hier niet.`);
         const outcome = recordSceneAction(game, hero.name, OWN_IDEA, s.text.trim(), false);
         nextTurn(game);
         closeOverlay(app);

@@ -2,7 +2,7 @@
 // De keuze is een voorkeur van dit toestel (localStorage); het spelbestand verandert er niet door.
 
 import { currentHero, type Game } from '../game/state';
-import { speak, speechAvailable } from '../platform/speech';
+import { queueSpeech, speak, speechAvailable, stopSpeaking } from '../platform/speech';
 import { escapeHtml } from './dom';
 
 export type ReadMode = 'beurt' | 'stem';
@@ -46,18 +46,26 @@ function hash(text: string): number {
 }
 
 const texts = new Map<string, string>();
+/** Teksten die al vanzelf voorgelezen zijn (zodat hertekenen van het scherm ze niet opnieuw voorleest). */
+const autoRead = new Set<string>();
+
+function voiceOn(): boolean {
+  return readMode() === 'stem' && speechAvailable();
+}
 
 /**
  * Voorleesbalkje bij een verhaaltekst.
- * - app-stem: knop "Lees voor" (de tekst wordt bewaard in een register, niet in de HTML-attributen).
+ * - app-stem: de tekst wordt vanzelf voorgelezen zodra hij verschijnt; knoppen "Nog eens" en "Stil"
+ *   (de tekst wordt bewaard in een register, niet in de HTML-attributen).
  * - om de beurt: wie leest er voor, en 1 op 3 keer met een gek stemmetje.
  */
 export function readBar(text: string, reader: string | null): string {
   if (!text.trim()) return '';
-  if (readMode() === 'stem' && speechAvailable()) {
+  if (voiceOn()) {
     const key = String(hash(text));
     texts.set(key, text);
-    return `<div class="read-bar"><button class="btn small read-btn" data-read="${key}">🔊 Lees voor</button></div>`;
+    return `<div class="read-bar"><button class="btn small read-btn" data-read="${key}">🔊 Nog eens</button>
+      <button class="btn small ghost hush-btn" data-hush="1">⏹ Stil</button></div>`;
   }
   if (!reader) return '';
   const h = hash(text);
@@ -71,14 +79,36 @@ export function readerOf(game: Game): string | null {
   return hero ? hero.player || hero.name : null;
 }
 
-/** Eén klik-luisteraar voor alle "Lees voor"-knoppen (ook in vensters bovenop het scherm). */
+/** Met de app-stem: leest een korte melding voor (bv. het gevolg van een actie), na wat er al voorgelezen wordt. */
+export function narrate(text: string): void {
+  if (voiceOn()) queueSpeech(text);
+}
+
+/** Leest elke nieuwe verhaaltekst op het scherm vanzelf voor (in volgorde), één keer per tekst. */
+function readNewTexts(): void {
+  if (!voiceOn()) return;
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-read]'))) {
+    const key = el.dataset.read ?? '';
+    const text = texts.get(key);
+    if (!text || autoRead.has(key)) continue;
+    autoRead.add(key);
+    queueSpeech(text);
+  }
+}
+
+/** Eén klik-luisteraar voor alle voorleesknoppen (ook in vensters bovenop het scherm) + vanzelf voorlezen. */
 export function installReadAloud(): void {
   document.addEventListener('click', (e) => {
     const target = e.target;
     if (!(target instanceof Element)) return;
+    if (target.closest('[data-hush]')) {
+      stopSpeaking();
+      return;
+    }
     const btn = target.closest<HTMLElement>('[data-read]');
     if (!btn) return;
     const text = texts.get(btn.dataset.read ?? '');
     if (text) speak(text);
   });
+  new MutationObserver(readNewTexts).observe(document.body, { childList: true, subtree: true });
 }

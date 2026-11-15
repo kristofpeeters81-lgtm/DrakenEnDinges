@@ -8,7 +8,7 @@ kort wat opvalt (een papiertje volstaat) en geef het daarna door.
 - [ ] Chrome-menu › **Toevoegen aan startscherm** (installeren). Start de app vanaf het icoontje.
 - [ ] Vliegtuigmodus aan → app opnieuw openen: werkt ze nog? (offline)
 - [ ] Regelkaart en heldenblad afdrukken (startscherm › *Afdrukken*), 1 heldenblad per speler.
-- [ ] Voorlezen kiezen op het heldenscherm: **om de beurt** of **app-stem** (test even de stem).
+- [ ] Voorlezen kiezen op het heldenscherm: **om de beurt** of **app-stem** (test even de stem). Met de app-stem: leest de tablet nieuwe teksten en het gevolg van elke actie **vanzelf** voor? Werkt **⏹ Stil**?
 - [ ] Een dobbelsteen klaarleggen (of in de app rollen).
 
 ## Avond 1 — los avontuur (± 45 min)

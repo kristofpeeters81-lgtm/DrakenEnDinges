@@ -1488,6 +1488,10 @@ small {
   background: #f5f3ff;
 }
 
+.hush-btn {
+  margin-left: 8px;
+}
+
 .settings {
   display: flex;
   flex-wrap: wrap;

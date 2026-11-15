@@ -29,10 +29,16 @@ export function warmUpVoices(): void {
   });
 }
 
+/** Leest voor; onderbreekt wat er nu voorgelezen wordt. */
 export function speak(text: string): void {
+  synth()?.cancel();
+  queueSpeech(text);
+}
+
+/** Leest voor ná wat er nu voorgelezen wordt (zo lopen actie-gevolg en afloop van de scène netjes na elkaar). */
+export function queueSpeech(text: string): void {
   const s = synth();
-  if (!s) return;
-  s.cancel();
+  if (!s || !text.trim()) return;
   const u = new SpeechSynthesisUtterance(text);
   if (!chosen) chosen = pickVoice();
   if (chosen) u.voice = chosen;
