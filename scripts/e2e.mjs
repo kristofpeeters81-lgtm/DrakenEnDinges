@@ -170,7 +170,11 @@ try {
 
   console.log('Startscherm');
   await page.goto(url, { waitUntil: 'networkidle0' });
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    // De eerste rondes spelen "om de beurt"; de standaard (app-stem) wordt na het laden van het bestand getest.
+    localStorage.setItem('dd.voorlezen', 'beurt');
+  });
   await page.reload({ waitUntil: 'networkidle0' });
   check((await page.$('[data-action="continue"]')) === null, 'zonder reservekopie geen "Verder spelen"');
   await shot('startscherm');
@@ -390,6 +394,9 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.hero-card').length === 3);
   check(true, 'na laden: 3 helden terug');
   check((await page.$$('.hero-card.absent')).length === 1, 'gast staat nog steeds op "speelt niet mee"');
+  check((await page.$('[data-action="readmode"][data-id="stem"].active')) !== null, 'voorlezen staat standaard op app-stem');
+  await click('[data-action="readmode"][data-id="beurt"]');
+  await page.waitForSelector('[data-action="readmode"][data-id="beurt"].active');
   await shot('na-laden');
   await click('[data-action="start"]');
   await page.waitForSelector('.turn-banner');
@@ -576,8 +583,8 @@ try {
   check((await page.$('.recap')) !== null, 'hoofdstuk 2 begint met "Vorige keer in Kakofonië"');
   await playScene(1);
   check((await page.$('.key-result.nok')) !== null, 'beurten op zonder succes: scène mislukt, het verhaal gaat toch verder');
-  // 5 acties (gevolg) + 4× "nu is … aan de beurt" + de afloop van de scène
-  check((await page.evaluate(() => window.__spoken.length)) === 2 + 5 + 4 + 1, 'app-stem: gevolg van elke actie, wie volgt en de afloop worden vanzelf voorgelezen');
+  // 5× de lijst met acties + 5× het gevolg + 4× "nu is … aan de beurt" + de afloop van de scène
+  check((await page.evaluate(() => window.__spoken.length)) === 2 + 5 + 5 + 4 + 1, 'app-stem: gevolg van elke actie, wie volgt en de afloop worden vanzelf voorgelezen');
   await click('[data-action="scene-next"]');
   await page.waitForFunction(() => document.querySelector('.scene-label')?.textContent?.includes('wending'));
   if (await isTestStory()) check((await text('.scene-text')).includes('na MISLUKT'), 'vertakking: na een mislukte scène volgt de "mislukt"-wending');

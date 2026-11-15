@@ -9,7 +9,8 @@ import { askOracle, isYes, oracleDiceCount, type Likelihood, type OracleOutcome 
 import { actionFailed, actionSucceeded, canActIn, OWN_IDEA } from '../game/season';
 import { currentHero, nextTurn, recordSceneAction, type Game, type Hero } from '../game/state';
 import { toast } from '../ui/dialog';
-import { narrate } from '../ui/readaloud';
+import { narrate, sentence, voiceBar } from '../ui/readaloud';
+import { stopSpeaking } from '../platform/speech';
 import { actionOf, DICE_ICON, dieSvg, escapeHtml, POT_SVG, $ } from '../ui/dom';
 import { openDice } from './dice';
 
@@ -41,7 +42,7 @@ function rollFor(app: App, hero: Hero, title: string, action: number, text: stri
     title,
     after: (success) => {
       // Met de app-stem: eerst het gevolg van de actie, daarna (vanzelf) de afloop van de scène als die er is.
-      narrate(`${hero.name}: ${result(success)}`);
+      narrate(`${hero.name}: ${sentence(title)}. ${result(success)}`);
       const outcome = recordSceneAction(game, hero.name, action, text, success);
       // De beurt gaat pas daarna door (in het dobbelvenster); de melding gaat dus over wie er nu volgt.
       window.setTimeout(() => announce(game, outcome), 0);
@@ -57,11 +58,17 @@ export function openActions(app: App): void {
   const season = play.state;
   const scene = play.scenes[season.scene];
   const overlay = $('#overlay');
+  // Met de app-stem: de vraag, het doel en de acties die nog open staan, in de volgorde van de lijst.
+  const open = scene.acties.filter((_, i) => !actionSucceeded(season, i));
+  const listText = `Wat doet ${hero.name}? Het doel: ${sentence(scene.doel)}. ${open
+    .map((a, n) => `${n + 1}: ${sentence(a.label)}.`)
+    .join(' ')} Of iets anders.`;
 
   overlay.innerHTML = `<div class="dice-panel actions-panel" role="dialog" aria-modal="true">
     <button class="btn ghost close-x" data-action="close" aria-label="Sluiten">✕</button>
     <h2>Wat doet ${escapeHtml(hero.name)}?</h2>
     <p class="explain">Doel: <span class="story-text">${escapeHtml(scene.doel)}</span></p>
+    ${voiceBar(listText)}
     <div class="action-list">${scene.acties
       .map((a, i) => {
         const done = actionSucceeded(season, i);
@@ -78,10 +85,13 @@ export function openActions(app: App): void {
     <p class="hint">Is ${escapeHtml(hero.name)} goed in wat de actie vraagt? Kies dan “goed in” in het dobbelvenster. Iemand mag helpen.</p>
   </div>`;
   overlay.hidden = false;
+  narrate(listText);
   overlay.oninput = null;
   overlay.onclick = (e) => {
     const hit = actionOf(e);
     if (!hit) return;
+    // Een keuze gemaakt (of venster dicht): de lijst hoeft niet verder voorgelezen te worden.
+    if (hit.action === 'close' || hit.action === 'own' || hit.action === 'pick') stopSpeaking();
     if (hit.action === 'close') closeOverlay(app);
     else if (hit.action === 'own') openOwnIdea(app, hero);
     else if (hit.action === 'pick') {

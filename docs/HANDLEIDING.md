@@ -89,9 +89,10 @@ Bij **Start sessie** kies je wat jullie vandaag spelen:
 Kies op het heldenscherm bij **Voorlezen**:
 - **Om de beurt**: bij elke verhaaltekst staat wie voorleest (de speler van de held die aan de beurt is).
   Soms met een opdracht erbij, bv. *met de stem van een verkouden trol*.
-- **App-stem**: de tablet leest **vanzelf** voor (Vlaamse stem als die op de tablet staat, anders Nederlandse):
-  elke nieuwe verhaaltekst, het **gevolg van elke actie** ("Mila: …"), wie er daarna aan de beurt is, en de afloop
-  van een scène. Alles netjes na elkaar. **🔊 Nog eens** leest een tekst opnieuw voor, **⏹ Stil** stopt het voorlezen.
+- **App-stem** (standaard): de tablet leest **vanzelf** voor (Vlaamse stem als die op de tablet staat, anders Nederlandse):
+  elke nieuwe verhaaltekst, bij **Wat doet …?** het doel en de **acties** waaruit je kan kiezen (genummerd),
+  daarna de **gekozen actie en wat er gebeurt** ("Mila: … Het gevolg"), wie er daarna aan de beurt is, en de afloop
+  van een scène. Kies je een actie terwijl de lijst nog voorgelezen wordt, dan stopt de lijst. Alles netjes na elkaar. **🔊 Nog eens** leest een tekst opnieuw voor, **⏹ Stil** stopt het voorlezen.
   Geen stem op het toestel? Dan is deze keuze grijs.
 De keuze wordt per toestel onthouden.
 

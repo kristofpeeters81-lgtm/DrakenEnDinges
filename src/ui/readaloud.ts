@@ -22,12 +22,16 @@ export const VOICE_TASKS = [
   'zingend, als een opera',
 ] as const;
 
+/** Standaard leest de app zelf voor (als het toestel een stem heeft); "om de beurt" enkel als iemand dat koos. */
 export function readMode(): ReadMode {
+  let stored: string | null = null;
   try {
-    return localStorage.getItem(KEY) === 'stem' ? 'stem' : 'beurt';
+    stored = localStorage.getItem(KEY);
   } catch {
-    return 'beurt';
+    // Geen opslag: dan de standaard.
   }
+  if (stored === 'beurt' || stored === 'stem') return stored;
+  return speechAvailable() ? 'stem' : 'beurt';
 }
 
 export function setReadMode(mode: ReadMode): void {
@@ -77,6 +81,21 @@ export function readBar(text: string, reader: string | null): string {
 export function readerOf(game: Game): string | null {
   const hero = currentHero(game);
   return hero ? hero.player || hero.name : null;
+}
+
+/** Knoppen "Nog eens" / "Stil" voor een tekst die de code zelf voorleest (niet vanzelf bij het tekenen). */
+export function voiceBar(text: string): string {
+  if (!voiceOn() || !text.trim()) return '';
+  const key = String(hash(text));
+  texts.set(key, text);
+  autoRead.add(key);
+  return `<div class="read-bar"><button class="btn small read-btn" data-read="${key}">🔊 Nog eens</button>
+      <button class="btn small ghost hush-btn" data-hush="1">⏹ Stil</button></div>`;
+}
+
+/** Zin zonder leesteken op het einde (om er zelf een punt achter te zetten). */
+export function sentence(text: string): string {
+  return text.trim().replace(/[.!?…:;,]+$/, '');
 }
 
 /** Met de app-stem: leest een korte melding voor (bv. het gevolg van een actie), na wat er al voorgelezen wordt. */
